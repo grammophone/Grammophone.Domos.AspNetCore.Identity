@@ -70,6 +70,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IdentityException.cs" />
+    <Compile Include="IdentityRole.cs" />
     <Compile Include="IdentityUser.cs" />
     <Compile Include="IUserListener.cs" />
     <Compile Include="NotificationDelegate.cs" />
