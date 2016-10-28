@@ -166,7 +166,7 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		#endregion
 
-		#region IUserStore<IdentityUser<U>,int> Members
+		#region IUserStore<IdentityUser<U>,long> Members
 
 		/// <summary>
 		/// Create a user.
@@ -319,7 +319,7 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		#endregion
 
-		#region IUserLoginStore<IdentityUser<U>,int> Members
+		#region IUserLoginStore<IdentityUser<U>,long> Members
 
 		/// <summary>
 		/// Add a <see cref="Registration"/> to a <see cref="User"/>.
@@ -444,7 +444,7 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		#endregion
 
-		#region IUserPasswordStore<IdentityUser<U>,int> Members
+		#region IUserPasswordStore<IdentityUser<U>,long> Members
 
 		/// <summary>
 		/// Get the password hash of the user if set, else null.
@@ -504,7 +504,7 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		#endregion
 
-		#region IUserRoleStore<IdentityUser<U>,int> Members
+		#region IUserRoleStore<IdentityUser<U>,long> Members
 
 		/// <summary>
 		/// Add a role to a user. The role must exist in the system.
@@ -610,7 +610,7 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		#endregion
 
-		#region IUserEmailStore<IdentityUser<U>,int> Members
+		#region IUserEmailStore<IdentityUser<U>,long> Members
 
 		/// <summary>
 		/// Find a user by her e-mail.
@@ -720,7 +720,7 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		#endregion
 
-		#region IUserLockoutStore<IdentityUser<U>,int> Members
+		#region IUserLockoutStore<IdentityUser<U>,long> Members
 
 		/// <summary>
 		/// Always gets zero.
@@ -780,7 +780,7 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		#endregion
 
-		#region IUserTwoFactorStore<IdentityUser<U>,int> Members
+		#region IUserTwoFactorStore<IdentityUser<U>,long> Members
 
 		/// <summary>
 		/// Always returns false.
@@ -800,7 +800,7 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		#endregion
 
-		#region IUserSecurityStampStore<IdentityUser<U>,int> Members
+		#region IUserSecurityStampStore<IdentityUser<U>,long> Members
 
 		/// <summary>
 		/// Get the security stamp of a user.
