@@ -462,7 +462,7 @@ namespace Grammophone.Domos.AspNet.Identity
 			{
 				case RegistrationStatus.PendingVerification:
 				case RegistrationStatus.Verified:
-					return Task.FromResult(user.DomainUser.PaswordHash);
+					return Task.FromResult(user.DomainUser.PasswordHash);
 
 				case RegistrationStatus.Revoked:
 					return Task.FromResult<string>(null);
@@ -484,7 +484,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			return Task.FromResult(user.DomainUser.PaswordHash != null);
+			return Task.FromResult(user.DomainUser.PasswordHash != null);
 		}
 
 		/// <summary>
@@ -497,7 +497,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			user.DomainUser.PaswordHash = passwordHash;
+			user.DomainUser.PasswordHash = passwordHash;
 
 			return Task.FromResult<object>(null);
 		}
