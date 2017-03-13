@@ -10,6 +10,7 @@ using Grammophone.Domos.Domain;
 using Microsoft.AspNet.Identity;
 using Microsoft.Practices.Unity;
 using Microsoft.Practices.Unity.Configuration;
+using Grammophone.Caching;
 
 namespace Grammophone.Domos.AspNet.Identity
 {
@@ -69,7 +70,7 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		#region Private fields
 
-		private static readonly IUnityContainer unityContainer;
+		private static MRUCache<string, IUnityContainer> diContainersCache;
 
 		private readonly IEnumerable<IUserListener<U>> userListeners;
 
@@ -79,26 +80,29 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		static UserStore()
 		{
-			var configurationSection = ConfigurationManager.GetSection("identity")
-				as UnityConfigurationSection;
+			diContainersCache = new MRUCache<string, IUnityContainer>(configurationSectionName =>
+			{
+				var configurationSection = ConfigurationManager.GetSection(configurationSectionName)
+					as UnityConfigurationSection;
 
-			if (configurationSection == null)
-				throw new IdentityException("The 'identity' configuration section is not defined.");
+				if (configurationSection == null)
+					throw new IdentityException("The 'identity' configuration section is not defined.");
 
-			unityContainer = new UnityContainer().LoadConfiguration(configurationSection);
+				return new UnityContainer().LoadConfiguration(configurationSection);
+			});
 		}
 
 		/// <summary>
 		/// Create.
 		/// </summary>
-		/// <param name="domainContainer">The container of the user domain model.</param>
-		public UserStore(IUsersDomainContainer<U> domainContainer)
+		/// <param name="configurationSectionName">The name of a unity configuration section.</param>
+		public UserStore(string configurationSectionName)
 		{
-			if (domainContainer == null) throw new ArgumentNullException(nameof(domainContainer));
+			this.DIContainer = diContainersCache.Get(configurationSectionName);
 
-			this.DomainContainer = domainContainer;
+			this.DomainContainer = this.DIContainer.Resolve<IUsersDomainContainer<U>>();
 
-			this.userListeners = unityContainer.ResolveAll<IUserListener<U>>().OrderBy(l => l.Order);
+			this.userListeners = this.DIContainer.ResolveAll<IUserListener<U>>().OrderBy(l => l.Order);
 		}
 
 		#endregion
@@ -163,6 +167,11 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// The container of the domain model.
 		/// </summary>
 		public IUsersDomainContainer<U> DomainContainer { get; private set; }
+
+		/// <summary>
+		/// The dependency injection container.
+		/// </summary>
+		public IUnityContainer DIContainer { get; private set; }
 
 		#endregion
 

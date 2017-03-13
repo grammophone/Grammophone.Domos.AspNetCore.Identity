@@ -78,6 +78,10 @@
     <Compile Include="UserStore.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Grammophone.Caching\Grammophone.Caching.csproj">
+      <Project>{2c834c5b-aa21-43fa-826e-398ab4de25ac}</Project>
+      <Name>Grammophone.Caching</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Grammophone.DataAccess\Grammophone.DataAccess.csproj">
       <Project>{c9030969-1247-4ee9-bf68-782c1d676c8f}</Project>
       <Name>Grammophone.DataAccess</Name>
