@@ -86,7 +86,7 @@ namespace Grammophone.Domos.AspNet.Identity
 					as UnityConfigurationSection;
 
 				if (configurationSection == null)
-					throw new IdentityException("The 'identity' configuration section is not defined.");
+					throw new IdentityException($"The '{configurationSectionName}' configuration section is not defined.");
 
 				return new UnityContainer().LoadConfiguration(configurationSection);
 			});
