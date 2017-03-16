@@ -15,8 +15,10 @@ using Grammophone.Caching;
 namespace Grammophone.Domos.AspNet.Identity
 {
 	/// <summary>
-	/// Implementation of an ASP.NET IDentity user store that is based
+	/// Implementation of an ASP.NET Identity user store that is based
 	/// on user domain object derived from <see cref="User"/>.
+	/// It expects a Unity container defining an <see cref="IUsersDomainContainer{U}"/>
+	/// and optionally any listeners implementing <see cref="IUserListener{U}"/>.
 	/// </summary>
 	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
 	public class UserStore<U> :
@@ -95,7 +97,11 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// <summary>
 		/// Create.
 		/// </summary>
-		/// <param name="configurationSectionName">The name of a unity configuration section.</param>
+		/// <param name="configurationSectionName">
+		/// The name of a unity configuration section, where
+		/// a <see cref="IUsersDomainContainer{U}"/> is defined
+		/// and optionally any listeners implementing <see cref="IUserListener{U}"/>.
+		/// </param>
 		public UserStore(string configurationSectionName)
 		{
 			this.DIContainer = diContainersCache.Get(configurationSectionName);
