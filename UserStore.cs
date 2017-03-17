@@ -72,27 +72,11 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		#region Private fields
 
-		private static MRUCache<string, IUnityContainer> diContainersCache;
-
 		private readonly IEnumerable<IUserListener<U>> userListeners;
 
 		#endregion
 
 		#region Construction
-
-		static UserStore()
-		{
-			diContainersCache = new MRUCache<string, IUnityContainer>(configurationSectionName =>
-			{
-				var configurationSection = ConfigurationManager.GetSection(configurationSectionName)
-					as UnityConfigurationSection;
-
-				if (configurationSection == null)
-					throw new IdentityException($"The '{configurationSectionName}' configuration section is not defined.");
-
-				return new UnityContainer().LoadConfiguration(configurationSection);
-			});
-		}
 
 		/// <summary>
 		/// Create.
@@ -104,11 +88,15 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// </param>
 		public UserStore(string configurationSectionName)
 		{
-			this.DIContainer = diContainersCache.Get(configurationSectionName);
+			if (configurationSectionName == null) throw new ArgumentNullException(nameof(configurationSectionName));
 
-			this.DomainContainer = this.DIContainer.Resolve<IUsersDomainContainer<U>>();
+			var identitySettings = new IdentitySettings(configurationSectionName);
 
-			this.userListeners = this.DIContainer.ResolveAll<IUserListener<U>>().OrderBy(l => l.Order);
+			this.Settings = identitySettings;
+
+			this.DomainContainer = identitySettings.Resolve<IUsersDomainContainer<U>>();
+
+			this.userListeners = identitySettings.ResolveAll<IUserListener<U>>().OrderBy(l => l.Order);
 		}
 
 		#endregion
@@ -175,9 +163,9 @@ namespace Grammophone.Domos.AspNet.Identity
 		public IUsersDomainContainer<U> DomainContainer { get; private set; }
 
 		/// <summary>
-		/// The dependency injection container.
+		/// The identity settings container.
 		/// </summary>
-		public IUnityContainer DIContainer { get; private set; }
+		public IdentitySettings Settings { get; private set; }
 
 		#endregion
 
