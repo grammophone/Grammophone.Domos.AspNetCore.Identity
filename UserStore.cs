@@ -192,7 +192,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// <see cref="OnCreatingUserAsync"/> is invoked whose default implementation
 		/// fires the <see cref="CreatingUser"/> event during this method.
 		/// </remarks>
-		public async Task CreateAsync(IdentityUser<U> user)
+		public virtual async Task CreateAsync(IdentityUser<U> user)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
@@ -224,7 +224,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// <see cref="OnDeletingUserAsync"/> is invoked whose default implementation
 		/// fires the <see cref="DeletingUser"/> event during this method.
 		/// </remarks>
-		public async Task DeleteAsync(IdentityUser<U> user)
+		public virtual async Task DeleteAsync(IdentityUser<U> user)
 		{
 			if (user == null) throw new ArgumentNullException("user");
 
@@ -253,7 +253,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// Returns a task whose <see cref="Task{T}.Result"/>
 		/// is the user found or null.
 		/// </returns>
-		public async Task<IdentityUser<U>> FindByIdAsync(long userID)
+		public virtual async Task<IdentityUser<U>> FindByIdAsync(long userID)
 		{
 			var domainUser =
 				await DomainContainer.Users
@@ -275,7 +275,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// Returns a task whose <see cref="Task{T}.Result"/>
 		/// is the user found or null.
 		/// </returns>
-		public async Task<IdentityUser<U>> FindByNameAsync(string userName)
+		public virtual async Task<IdentityUser<U>> FindByNameAsync(string userName)
 		{
 			if (userName == null) throw new ArgumentNullException(nameof(userName));
 
@@ -300,7 +300,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// <see cref="OnUpdatingUserAsync"/> is invoked whose default implementation
 		/// fires the <see cref="DeletingUser"/> event during this method.
 		/// </remarks>
-		public async Task UpdateAsync(IdentityUser<U> user)
+		public virtual async Task UpdateAsync(IdentityUser<U> user)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
@@ -347,7 +347,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// that corresponds to the <see cref="Registration"/>.
 		/// </param>
 		/// <returns>Returns the task which completes the operation.</returns>
-		public async Task AddLoginAsync(IdentityUser<U> user, UserLoginInfo login)
+		public virtual async Task AddLoginAsync(IdentityUser<U> user, UserLoginInfo login)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (login == null) throw new ArgumentNullException(nameof(login));
@@ -384,7 +384,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// Returns an task whose <see cref="Task{T}.Result"/> contains the found user
 		/// or null.
 		/// </returns>
-		public async Task<IdentityUser<U>> FindAsync(UserLoginInfo login)
+		public virtual async Task<IdentityUser<U>> FindAsync(UserLoginInfo login)
 		{
 			if (login == null) throw new ArgumentNullException(nameof(login));
 
@@ -431,7 +431,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// <param name="user">The user.</param>
 		/// <param name="login">The representation of an external login.</param>
 		/// <returns>Returns a task for the operation.</returns>
-		public async Task RemoveLoginAsync(IdentityUser<U> user, UserLoginInfo login)
+		public virtual async Task RemoveLoginAsync(IdentityUser<U> user, UserLoginInfo login)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (login == null) throw new ArgumentNullException(nameof(login));
@@ -531,7 +531,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// Thrown when a role having the given <paramref name="roleName"/>
 		/// does not exist in the system.
 		/// </exception>
-		public async Task AddToRoleAsync(IdentityUser<U> user, string roleName)
+		public virtual async Task AddToRoleAsync(IdentityUser<U> user, string roleName)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (roleName == null) throw new ArgumentNullException(nameof(roleName));
@@ -600,7 +600,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// <param name="user">The user.</param>
 		/// <param name="roleName">The name of the role to remove from the user.</param>
 		/// <returns>Returns a task for the operation.</returns>
-		public async Task RemoveFromRoleAsync(IdentityUser<U> user, string roleName)
+		public virtual async Task RemoveFromRoleAsync(IdentityUser<U> user, string roleName)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (roleName == null) throw new ArgumentNullException(nameof(roleName));
@@ -635,7 +635,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// Returns a task whose <see cref="Task{T}.Result"/> contains 
 		/// the user found or null.
 		/// </returns>
-		public async Task<IdentityUser<U>> FindByEmailAsync(string email)
+		public virtual async Task<IdentityUser<U>> FindByEmailAsync(string email)
 		{
 			if (email == null) throw new ArgumentNullException(nameof(email));
 
@@ -689,7 +689,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// <param name="user">The user.</param>
 		/// <param name="email">the user's e-mail.</param>
 		/// <returns>Returns a task which completes the operation.</returns>
-		public async Task SetEmailAsync(IdentityUser<U> user, string email)
+		public virtual async Task SetEmailAsync(IdentityUser<U> user, string email)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (email == null) throw new ArgumentNullException(nameof(email));
@@ -712,7 +712,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// <param name="user">The user.</param>
 		/// <param name="confirmed">True if the user's e-mail is confirmed.</param>
 		/// <returns>Returns a task which completes the operation.</returns>
-		public async Task SetEmailConfirmedAsync(IdentityUser<U> user, bool confirmed)
+		public virtual async Task SetEmailConfirmedAsync(IdentityUser<U> user, bool confirmed)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
@@ -824,7 +824,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// <returns>
 		/// Returns a task whose result contains the user's <see cref="User.SecurityStamp"/>.
 		/// </returns>
-		public async Task<string> GetSecurityStampAsync(IdentityUser<U> user)
+		public virtual async Task<string> GetSecurityStampAsync(IdentityUser<U> user)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
@@ -843,7 +843,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// This implementation writes to the <see cref="User.SecurityStamp"/> 
 		/// property of the <see cref="User"/>.
 		/// </remarks>
-		public async Task SetSecurityStampAsync(IdentityUser<U> user, string stamp)
+		public virtual async Task SetSecurityStampAsync(IdentityUser<U> user, string stamp)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
