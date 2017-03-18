@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNet.Identity;
 using Grammophone.Domos.DataAccess;
 using Grammophone.Domos.Domain;
-using Microsoft.AspNet.Identity;
-using Microsoft.Practices.Unity;
-using Microsoft.Practices.Unity.Configuration;
-using Grammophone.Caching;
 using Grammophone.Setup;
 
 namespace Grammophone.Domos.AspNet.Identity
