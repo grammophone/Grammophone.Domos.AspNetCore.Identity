@@ -11,6 +11,7 @@ using Microsoft.AspNet.Identity;
 using Microsoft.Practices.Unity;
 using Microsoft.Practices.Unity.Configuration;
 using Grammophone.Caching;
+using Grammophone.Setup;
 
 namespace Grammophone.Domos.AspNet.Identity
 {
@@ -90,7 +91,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		{
 			if (configurationSectionName == null) throw new ArgumentNullException(nameof(configurationSectionName));
 
-			var identitySettings = new IdentitySettings(configurationSectionName);
+			var identitySettings = Settings.Load(configurationSectionName);
 
 			this.Settings = identitySettings;
 
@@ -165,7 +166,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// <summary>
 		/// The identity settings container.
 		/// </summary>
-		public IdentitySettings Settings { get; private set; }
+		public Settings Settings { get; private set; }
 
 		#endregion
 
