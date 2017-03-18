@@ -318,7 +318,8 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// </summary>
 		public void Dispose()
 		{
-			DomainContainer.Dispose();
+			this.DomainContainer.Dispose();
+			this.Settings.Dispose();
 		}
 
 		#endregion
