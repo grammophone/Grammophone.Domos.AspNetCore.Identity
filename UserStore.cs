@@ -244,6 +244,7 @@ namespace Grammophone.Domos.AspNet.Identity
 				await DomainContainer.Users
 				.Include(u => u.Registrations)
 				.Include(u => u.Roles)
+				.Where(u => u.RegistrationStatus != RegistrationStatus.Revoked)
 				.FirstOrDefaultAsync(u => u.ID == userID);
 
 			if (domainUser == null)
@@ -268,6 +269,7 @@ namespace Grammophone.Domos.AspNet.Identity
 				await DomainContainer.Users
 				.Include(u => u.Registrations)
 				.Include(u => u.Roles)
+				.Where(u => u.RegistrationStatus != RegistrationStatus.Revoked)
 				.FirstOrDefaultAsync(u => u.UserName == userName);
 
 			if (domainUser == null)
@@ -628,7 +630,7 @@ namespace Grammophone.Domos.AspNet.Identity
 			var userQuery = from user in DomainContainer.Users
 											.Include(u => u.Registrations)
 											.Include(u => u.Roles)
-											where user.Email == email
+											where user.Email == email && user.RegistrationStatus != RegistrationStatus.Revoked
 											select user;
 
 			var userFound = await userQuery.FirstOrDefaultAsync();
@@ -1067,6 +1069,5 @@ namespace Grammophone.Domos.AspNet.Identity
 		}
 
 		#endregion
-
 	}
 }
