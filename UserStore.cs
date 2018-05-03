@@ -502,7 +502,7 @@ namespace Grammophone.Domos.AspNet.Identity
 
 			user.DomainUser.PasswordHash = passwordHash;
 
-			return Task.FromResult<object>(null);
+			return Task.CompletedTask;
 		}
 
 		#endregion
@@ -750,7 +750,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		}
 
 		/// <summary>
-		/// Always returns 0.
+		/// Always returns 1.
 		/// </summary>
 		public virtual Task<int> IncrementAccessFailedCountAsync(IdentityUser<U> user)
 		{
@@ -762,7 +762,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// </summary>
 		public virtual Task ResetAccessFailedCountAsync(IdentityUser<U> user)
 		{
-			return Task.FromResult<object>(null);
+			return Task.CompletedTask;
 		}
 
 		/// <summary>
@@ -770,7 +770,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// </summary>
 		public virtual Task SetLockoutEnabledAsync(IdentityUser<U> user, bool enabled)
 		{
-			return Task.FromResult<object>(null);
+			return Task.CompletedTask;
 		}
 
 		/// <summary>
@@ -778,7 +778,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// </summary>
 		public virtual Task SetLockoutEndDateAsync(IdentityUser<U> user, DateTimeOffset lockoutEnd)
 		{
-			return Task.FromResult<object>(null);
+			return Task.CompletedTask;
 		}
 
 		#endregion
@@ -798,7 +798,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// </summary>
 		public virtual Task SetTwoFactorEnabledAsync(IdentityUser<U> user, bool enabled)
 		{
-			return Task.FromResult<object>(null);
+			return Task.CompletedTask;
 		}
 
 		#endregion
