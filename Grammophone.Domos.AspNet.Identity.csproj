@@ -1,113 +1,31 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\packages\EntityFramework.6.4.4\build\EntityFramework.props" Condition="Exists('..\..\packages\EntityFramework.6.4.4\build\EntityFramework.props')" />
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{9B58F66E-C86F-4EB7-B444-9D8F8A96D938}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Grammophone.Domos.AspNet.Identity</RootNamespace>
-    <AssemblyName>Grammophone.Domos.AspNet.Identity</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyTitle>Grammophone.Domos.AspNet.Identity</AssemblyTitle>
+    <Product>Grammophone.Domos.AspNet.Identity</Product>
+    <Copyright>Copyright ©  2016</Copyright>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <DocumentationFile>bin\$(Configuration)\Grammophone.Domos.AspNet.Identity.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\Grammophone.Domos.AspNet.Identity.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Release\Grammophone.Domos.AspNet.Identity.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.dll</HintPath>
-    </Reference>
-    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.SqlServer.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.AspNet.Identity.Core, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.AspNet.Identity.Core.2.2.1\lib\net45\Microsoft.AspNet.Identity.Core.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Practices.Unity, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Unity.3.5.1404.0\lib\net45\Microsoft.Practices.Unity.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Practices.Unity.Configuration, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Unity.3.5.1404.0\lib\net45\Microsoft.Practices.Unity.Configuration.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Practices.Unity.RegistrationByConvention, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Unity.3.5.1404.0\lib\net45\Microsoft.Practices.Unity.RegistrationByConvention.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="Microsoft.AspNet.Identity.Core" Version="2.2.1" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Configuration\OAuthApplicationCredentials.cs" />
-    <Compile Include="IdentityException.cs" />
-    <Compile Include="IdentityRole.cs" />
-    <Compile Include="IdentityUser.cs" />
-    <Compile Include="IUserListener.cs" />
-    <Compile Include="NotificationDelegate.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UserStore.cs" />
+    <ProjectReference Include="..\Grammophone.Caching\Grammophone.Caching.csproj" />
+    <ProjectReference Include="..\Grammophone.DataAccess\Grammophone.DataAccess.csproj" />
+    <ProjectReference Include="..\Grammophone.Domos.DataAccess\Grammophone.Domos.DataAccess.csproj" />
+    <ProjectReference Include="..\Grammophone.Domos.Domain\Grammophone.Domos.Domain.csproj" />
+    <ProjectReference Include="..\Grammophone.Setup\Grammophone.Setup.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Grammophone.Caching\Grammophone.Caching.csproj">
-      <Project>{2c834c5b-aa21-43fa-826e-398ab4de25ac}</Project>
-      <Name>Grammophone.Caching</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Grammophone.DataAccess\Grammophone.DataAccess.csproj">
-      <Project>{c9030969-1247-4ee9-bf68-782c1d676c8f}</Project>
-      <Name>Grammophone.DataAccess</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Grammophone.Domos.DataAccess\Grammophone.Domos.DataAccess.csproj">
-      <Project>{02d58dc8-ab2f-4120-88d7-358b2456f58f}</Project>
-      <Name>Grammophone.Domos.DataAccess</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Grammophone.Domos.Domain\Grammophone.Domos.Domain.csproj">
-      <Project>{d758ee48-75df-42d6-b6d4-9fabdae41f1c}</Project>
-      <Name>Grammophone.Domos.Domain</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Grammophone.Setup\Grammophone.Setup.csproj">
-      <Project>{acd1f5c9-a8b1-46d1-a6be-f6027fe91017}</Project>
-      <Name>Grammophone.Setup</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+	<ItemGroup>
+		<None Remove=".git" />
+		<None Remove=".gitignore" />
+	</ItemGroup>
 </Project>
