@@ -10,6 +10,7 @@ The class `UserStore<U>` implements the following interfaces,
 where the template argument `U` must be derived from Domos `User`:
 
 * `IUserStore<U>`
+* `IQueryableUserStore<U>`
 * `IUserLoginStore<U>`
 * `IUserPasswordStore<U>`
 * `IUserRoleStore<U>`

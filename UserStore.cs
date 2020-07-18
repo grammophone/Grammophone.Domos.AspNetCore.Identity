@@ -21,6 +21,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
 	public class UserStore<U> :
 		IUserStore<U>,
+		IQueryableUserStore<U>,
 		IUserLoginStore<U>,
 		IUserPasswordStore<U>,
 		IUserRoleStore<U>,
@@ -164,6 +165,11 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// The identity settings container.
 		/// </summary>
 		public Settings Settings { get; private set; }
+
+		/// <summary>
+		/// The users in the system.
+		/// </summary>
+		public IQueryable<U> Users => this.DomainContainer.Users;
 
 		#endregion
 
