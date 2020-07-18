@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
 using Grammophone.Domos.DataAccess;
 using Grammophone.Domos.Domain;
 using Grammophone.Setup;
-using System.Threading;
+using Microsoft.AspNetCore.Identity;
 
 namespace Grammophone.Domos.AspNetCore.Identity
 {
