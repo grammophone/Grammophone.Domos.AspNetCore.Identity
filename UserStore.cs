@@ -4,12 +4,13 @@ using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Identity;
+using Microsoft.AspNetCore.Identity;
 using Grammophone.Domos.DataAccess;
 using Grammophone.Domos.Domain;
 using Grammophone.Setup;
+using System.Threading;
 
-namespace Grammophone.Domos.AspNet.Identity
+namespace Grammophone.Domos.AspNetCore.Identity
 {
 	/// <summary>
 	/// Implementation of an ASP.NET Identity user store that is based
@@ -19,14 +20,14 @@ namespace Grammophone.Domos.AspNet.Identity
 	/// </summary>
 	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
 	public class UserStore<U> :
-		IUserStore<IdentityUser<U>, long>,
-		IUserLoginStore<IdentityUser<U>, long>,
-		IUserPasswordStore<IdentityUser<U>, long>,
-		IUserRoleStore<IdentityUser<U>, long>,
-		IUserEmailStore<IdentityUser<U>, long>,
-		IUserLockoutStore<IdentityUser<U>, long>,
-		IUserTwoFactorStore<IdentityUser<U>, long>,
-		IUserSecurityStampStore<IdentityUser<U>, long>
+		IUserStore<U>,
+		IUserLoginStore<U>,
+		IUserPasswordStore<U>,
+		IUserRoleStore<U>,
+		IUserEmailStore<U>,
+		IUserLockoutStore<U>,
+		IUserTwoFactorStore<U>,
+		IUserSecurityStampStore<U>
 		where U : User
 	{
 		#region Auxilliary classes
@@ -39,7 +40,7 @@ namespace Grammophone.Domos.AspNet.Identity
 		{
 			#region Construction
 
-			internal Login(IdentityUser<U> user, UserLoginInfo info)
+			internal Login(U user, UserLoginInfo info)
 			{
 				if (user == null) throw new ArgumentNullException(nameof(user));
 				if (info == null) throw new ArgumentNullException(nameof(info));
@@ -55,7 +56,7 @@ namespace Grammophone.Domos.AspNet.Identity
 			/// <summary>
 			/// The user.
 			/// </summary>
-			public IdentityUser<U> User { get; private set; }
+			public U User { get; private set; }
 
 			/// <summary>
 			/// The external registration.
@@ -166,146 +167,192 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		#endregion
 
-		#region IUserStore<IdentityUser<U>,long> Members
+		#region IUserStore<U> Members
 
 		/// <summary>
 		/// Create a user.
 		/// </summary>
 		/// <param name="user">The user to create.</param>
+		/// <param name="cancellationToken">Cancellation token used during saving.</param>
 		/// <returns>Returns the task which completes the operation.</returns>
 		/// <remarks>
 		/// <see cref="OnCreatingUserAsync"/> is invoked whose default implementation
 		/// fires the <see cref="CreatingUser"/> event during this method.
 		/// </remarks>
-		public virtual async Task CreateAsync(IdentityUser<U> user)
+		public virtual async Task<IdentityResult> CreateAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			var domainUser = user.DomainUser;
-
 			using (var transaction = DomainContainer.BeginTransaction())
 			{
-				DomainContainer.Users.Add(domainUser);
+				this.DomainContainer.Users.Add(user);
 
-				domainUser.SecurityStamp = String.Empty;
-				domainUser.CreationDate = DateTime.UtcNow;
-				domainUser.Guid = new Guid();
+				user.SecurityStamp = String.Empty;
+				user.CreationDate = DateTime.UtcNow;
+				user.Guid = new Guid();
 
-				await OnCreatingUserAsync(domainUser);
+				await OnCreatingUserAsync(user);
 
-				await DomainContainer.SaveChangesAsync();
+				await this.DomainContainer.SaveChangesAsync(cancellationToken);
 
 				transaction.Commit();
 			}
 
+			return IdentityResult.Success;
 		}
 
 		/// <summary>
 		/// Delete a user.
 		/// </summary>
 		/// <param name="user">The user to create.</param>
+		/// <param name="cancellationToken">Cancellation token used during delete.</param>
 		/// <returns>Returns the task which completes the operation.</returns>
 		/// <remarks>
 		/// <see cref="OnDeletingUserAsync"/> is invoked whose default implementation
 		/// fires the <see cref="DeletingUser"/> event during this method.
 		/// </remarks>
-		public virtual async Task DeleteAsync(IdentityUser<U> user)
+		public virtual async Task<IdentityResult> DeleteAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException("user");
 
-			var domainUser = user.DomainUser;
-
 			using (var transaction = DomainContainer.BeginTransaction())
 			{
-				DomainContainer.Users.Attach(domainUser);
+				DomainContainer.Users.Attach(user);
 
-				await OnDeletingUserAsync(domainUser);
+				await OnDeletingUserAsync(user);
 
-				DomainContainer.Users.Remove(domainUser);
+				DomainContainer.Users.Remove(user);
 
-				await DomainContainer.SaveChangesAsync();
+				await DomainContainer.SaveChangesAsync(cancellationToken);
 
 				transaction.Commit();
 			}
 
+			return IdentityResult.Success;
 		}
 
 		/// <summary>
 		/// Find a user by her ID.
 		/// </summary>
 		/// <param name="userID">The ID of the user.</param>
+		/// <param name="cancellationToken">Cancellation token used during find.</param>
 		/// <returns>
 		/// Returns a task whose <see cref="Task{T}.Result"/>
 		/// is the user found or null.
 		/// </returns>
-		public virtual async Task<IdentityUser<U>> FindByIdAsync(long userID)
+		public virtual async Task<U> FindByIdAsync(string userID, CancellationToken cancellationToken)
 		{
-			var domainUser =
+			if (!long.TryParse(userID, out long userIdValue))
+			{
+				throw new ArgumentException("The User ID is not a valid long integer value.", nameof(userID));
+			}
+
+			var user =
 				await DomainContainer.Users
 				.Include(u => u.Registrations)
 				.Include(u => u.Roles)
 				.Where(u => u.RegistrationStatus != RegistrationStatus.Revoked)
-				.FirstOrDefaultAsync(u => u.ID == userID);
+				.FirstOrDefaultAsync(u => u.ID == userIdValue, cancellationToken);
 
-			if (domainUser == null)
-				return null;
-			else
-				return new IdentityUser<U>(domainUser);
+			return user;
 		}
 
 		/// <summary>
 		/// Find a user by her unique user name.
 		/// </summary>
 		/// <param name="userName">The <see cref="User.UserName"/> of the user.</param>
+		/// <param name="cancellationToken">Cancellation token used during retrieving.</param>
 		/// <returns>
 		/// Returns a task whose <see cref="Task{T}.Result"/>
 		/// is the user found or null.
 		/// </returns>
-		public virtual async Task<IdentityUser<U>> FindByNameAsync(string userName)
+		public virtual async Task<U> FindByNameAsync(string userName, CancellationToken cancellationToken)
 		{
 			if (userName == null) throw new ArgumentNullException(nameof(userName));
 
-			var domainUser =
+			var user =
 				await DomainContainer.Users
 				.Include(u => u.Registrations)
 				.Include(u => u.Roles)
 				.Where(u => u.RegistrationStatus != RegistrationStatus.Revoked)
-				.FirstOrDefaultAsync(u => u.UserName == userName);
+				.FirstOrDefaultAsync(u => u.UserName == userName, cancellationToken);
 
-			if (domainUser == null)
-				return null;
-			else
-				return new IdentityUser<U>(domainUser);
+			return user;
 		}
 
 		/// <summary>
 		/// Update a user.
 		/// </summary>
 		/// <param name="user"></param>
+		/// <param name="cancellationToken">Cancellation token used during saving.</param>
 		/// <returns>Returns the task which completes the operation.</returns>
 		/// <remarks>
 		/// <see cref="OnUpdatingUserAsync"/> is invoked whose default implementation
 		/// fires the <see cref="DeletingUser"/> event during this method.
 		/// </remarks>
-		public virtual async Task UpdateAsync(IdentityUser<U> user)
+		public virtual async Task<IdentityResult> UpdateAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			var domainUser = user.DomainUser;
-
 			using (var transaction = DomainContainer.BeginTransaction())
 			{
-				DomainContainer.Users.Attach(domainUser);
+				DomainContainer.Users.Attach(user);
 
-				await OnUpdatingUserAsync(domainUser);
+				await OnUpdatingUserAsync(user);
 
-				DomainContainer.SetAsModified(domainUser);
+				DomainContainer.SetAsModified(user);
 
-				await DomainContainer.SaveChangesAsync();
+				await DomainContainer.SaveChangesAsync(cancellationToken);
 
 				transaction.Commit();
 			}
+
+			return IdentityResult.Success;
 		}
+
+		/// <summary>
+		/// Returns the ID of the user in string representation.>
+		/// </summary>
+		public Task<string> GetUserIdAsync(U user, CancellationToken cancellationToken)
+		{
+			if (user == null) throw new ArgumentNullException(nameof(user));
+
+			return Task.FromResult(user.ID.ToString());
+		}
+
+		/// <summary>
+		/// Returns the <see cref="User.UserName"/> property.
+		/// </summary>
+		public virtual Task<string> GetUserNameAsync(U user, CancellationToken cancellationToken)
+		{
+			if (user == null) throw new ArgumentNullException(nameof(user));
+
+			return Task.FromResult(user.UserName);
+		}
+
+		/// <summary>
+		/// Sets the <see cref="User.UserName"/> property of the user.
+		/// </summary>
+		public virtual Task SetUserNameAsync(U user, string userName, CancellationToken cancellationToken)
+		{
+			if (user == null) throw new ArgumentNullException(nameof(user));
+
+			user.UserName = userName;
+
+			return Task.CompletedTask;
+		}
+
+		/// <summary>
+		/// Default implementation delegates to <see cref="GetUserNameAsync(U, CancellationToken)"/>.
+		/// </summary>
+		public Task<string> GetNormalizedUserNameAsync(U user, CancellationToken cancellationToken)
+			=> GetUserNameAsync(user, cancellationToken);
+
+		/// <summary>
+		/// Default implementation delegates to <see cref="SetUserNameAsync(U, string, CancellationToken)"/>.
+		/// </summary>
+		public Task SetNormalizedUserNameAsync(U user, string normalizedName, CancellationToken cancellationToken)
+			=> SetUserNameAsync(user, normalizedName, cancellationToken);
 
 		#endregion
 
@@ -322,7 +369,7 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		#endregion
 
-		#region IUserLoginStore<IdentityUser<U>,long> Members
+		#region IUserLoginStore<U,long> Members
 
 		/// <summary>
 		/// Add a <see cref="Registration"/> to a <see cref="User"/>.
@@ -330,12 +377,13 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// <param name="user">
 		/// The Identity user which wraps a <see cref="User"/>.
 		/// </param>
+		/// <param name="cancellationToken">Cancellation token for the operation.</param>
 		/// <param name="login">
 		/// The <see cref="UserLoginInfo"/> 
 		/// that corresponds to the <see cref="Registration"/>.
 		/// </param>
 		/// <returns>Returns the task which completes the operation.</returns>
-		public virtual async Task AddLoginAsync(IdentityUser<U> user, UserLoginInfo login)
+		public virtual async Task AddLoginAsync(U user, UserLoginInfo login, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (login == null) throw new ArgumentNullException(nameof(login));
@@ -350,13 +398,13 @@ namespace Grammophone.Domos.AspNet.Identity
 
 				registration.Provider = registrationProvider;
 				registration.ProviderKey = login.ProviderKey;
-				registration.User = user.DomainUser;
+				registration.User = user;
 
 				await OnAddingLoginAsync(registration);
 
 				DomainContainer.Registrations.Add(registration);
 
-				await DomainContainer.SaveChangesAsync();
+				await DomainContainer.SaveChangesAsync(cancellationToken);
 
 				transaction.Commit();
 			}
@@ -365,18 +413,19 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// <summary>
 		/// Find a user by her (external) registration.
 		/// </summary>
-		/// <param name="login">
-		/// The <see cref="UserLoginInfo"/> that corresponds to the <see cref="Registration"/>.
-		/// </param>
+		/// <param name="loginProvider">The login provider name.</param>
+		/// <param name="providerKey">The login provider key.</param>
+		/// <param name="cancellationToken">Cancellation token for the operation.</param>
 		/// <returns>
 		/// Returns an task whose <see cref="Task{T}.Result"/> contains the found user
 		/// or null.
 		/// </returns>
-		public virtual async Task<IdentityUser<U>> FindAsync(UserLoginInfo login)
+		public virtual async Task<U> FindByLoginAsync(string loginProvider, string providerKey, CancellationToken cancellationToken)
 		{
-			if (login == null) throw new ArgumentNullException(nameof(login));
+			if (loginProvider == null) throw new ArgumentNullException(nameof(loginProvider));
+			if (providerKey == null) throw new ArgumentNullException(nameof(providerKey));
 
-			var registrationProvider = GetRegistrationProvider(login);
+			var registrationProvider = GetRegistrationProvider(loginProvider);
 
 			var userQuery = from user in DomainContainer.Users
 											.Include(user => user.Registrations)
@@ -385,52 +434,60 @@ namespace Grammophone.Domos.AspNet.Identity
 											user.RegistrationStatus != RegistrationStatus.Revoked &&
 											user.Registrations.Any(
 												registration =>
-													registration.ProviderKey == login.ProviderKey
+													registration.ProviderKey == providerKey
 													&& registration.Provider == registrationProvider)
 											select user;
 
-			var foundUser = await userQuery.FirstOrDefaultAsync();
+			var foundUser = await userQuery.FirstOrDefaultAsync(cancellationToken);
 
-			if (foundUser != null)
-				return new IdentityUser<U>(foundUser);
-			else
-				return null;
+			return foundUser;
 		}
 
 		/// <summary>
 		/// Get the (external) registrations of a user.
 		/// </summary>
 		/// <param name="user">The user.</param>
+		/// <param name="cancellationToken">Cancellation token for the operation.</param>
 		/// <returns>
 		/// Returns a task whose <see cref="Task{T}.Result"/> holds the 
 		/// <see cref="UserLoginInfo"/>'s which correspond to the user's
 		/// registrations.
 		/// </returns>
-		public Task<IList<UserLoginInfo>> GetLoginsAsync(IdentityUser<U> user)
+		public Task<IList<UserLoginInfo>> GetLoginsAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			return Task.FromResult(user.GetLoginInfos());
+			IList<UserLoginInfo> loginInfos = new List<UserLoginInfo>(user.Registrations.Count);
+
+			foreach (var registration in user.Registrations)
+			{
+				loginInfos.Add(new UserLoginInfo(registration.Provider.ToString(), registration.ProviderKey, registration.Provider.ToString()));
+			}
+
+			return Task.FromResult(loginInfos);
 		}
 
 		/// <summary>
 		/// Remove an external login of a user.
 		/// </summary>
 		/// <param name="user">The user.</param>
-		/// <param name="login">The representation of an external login.</param>
+		/// <param name="loginProvider">The login provider name.</param>
+		/// <param name="providerKey">The login provider key.</param>
+		/// <param name="cancellationToken">Cancellation token for the operation.</param>
 		/// <returns>Returns a task for the operation.</returns>
-		public virtual async Task RemoveLoginAsync(IdentityUser<U> user, UserLoginInfo login)
+		public virtual async Task RemoveLoginAsync(U user, string loginProvider, string providerKey, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
-			if (login == null) throw new ArgumentNullException(nameof(login));
+			if (loginProvider == null) throw new ArgumentNullException(nameof(loginProvider));
+			if (providerKey == null) throw new ArgumentNullException(nameof(providerKey));
 
-			var registrationProvider = GetRegistrationProvider(login);
+			var registrationProvider = GetRegistrationProvider(loginProvider);
 
 			using (var transaction = DomainContainer.BeginTransaction())
 			{
 				var registrationFound =
-					user.DomainUser.Registrations.FirstOrDefault(registration =>
-						registration.ProviderKey == login.ProviderKey && registration.Provider == registrationProvider);
+					user.Registrations.FirstOrDefault(registration =>
+						registration.ProviderKey == providerKey && registration.Provider == registrationProvider);
 
 				if (registrationFound != null)
 				{
@@ -447,25 +504,26 @@ namespace Grammophone.Domos.AspNet.Identity
 
 		#endregion
 
-		#region IUserPasswordStore<IdentityUser<U>,long> Members
+		#region IUserPasswordStore<U> Members
 
 		/// <summary>
 		/// Get the password hash of the user if set, else null.
 		/// </summary>
 		/// <param name="user">The user.</param>
+		/// <param name="cancellationToken">Ignored; the action is immediate.</param>
 		/// <returns>
 		/// Returns a task whose <see cref="Task{T}.Result"/> will contain the 
 		/// password hash or null.
 		/// </returns>
-		public Task<string> GetPasswordHashAsync(IdentityUser<U> user)
+		public Task<string> GetPasswordHashAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			switch (user.DomainUser.RegistrationStatus)
+			switch (user.RegistrationStatus)
 			{
 				case RegistrationStatus.PendingVerification:
 				case RegistrationStatus.Verified:
-					return Task.FromResult(user.DomainUser.PasswordHash);
+					return Task.FromResult(user.PasswordHash);
 
 				case RegistrationStatus.Revoked:
 					return Task.FromResult<string>(null);
@@ -479,15 +537,16 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// Determine whether a user has a password.
 		/// </summary>
 		/// <param name="user">The user.</param>
+		/// <param name="cancellationToken">Ignored; the action is immediate.</param>
 		/// <returns>
 		/// Returns a task whose <see cref="Task{T}.Result"/> contains
 		/// a boolean value indicating whether the user has a password or not.
 		/// </returns>
-		public Task<bool> HasPasswordAsync(IdentityUser<U> user)
+		public Task<bool> HasPasswordAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			return Task.FromResult(user.DomainUser.PasswordHash != null);
+			return Task.FromResult(user.PasswordHash != null);
 		}
 
 		/// <summary>
@@ -495,51 +554,51 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// </summary>
 		/// <param name="user">The user.</param>
 		/// <param name="passwordHash">The password hash to set.</param>
+		/// <param name="cancellationToken">Ignored; the action is immediate.</param>
 		/// <returns>Returns a task for the operation.</returns>
-		public Task SetPasswordHashAsync(IdentityUser<U> user, string passwordHash)
+		public Task SetPasswordHashAsync(U user, string passwordHash, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			user.DomainUser.PasswordHash = passwordHash;
+			user.PasswordHash = passwordHash;
 
 			return Task.CompletedTask;
 		}
 
 		#endregion
 
-		#region IUserRoleStore<IdentityUser<U>,long> Members
+		#region IUserRoleStore<U> Members
 
 		/// <summary>
 		/// Add a role to a user. The role must exist in the system.
 		/// </summary>
 		/// <param name="user">The user.</param>
 		/// <param name="roleName">The name of the role to add.</param>
+		/// <param name="cancellationToken">Cancellation token for the action.</param>
 		/// <returns>Returns a task completing the operation.</returns>
 		/// <exception cref="IdentityException">
 		/// Thrown when a role having the given <paramref name="roleName"/>
 		/// does not exist in the system.
 		/// </exception>
-		public virtual async Task AddToRoleAsync(IdentityUser<U> user, string roleName)
+		public virtual async Task AddToRoleAsync(U user, string roleName, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (roleName == null) throw new ArgumentNullException(nameof(roleName));
 
-			var domainUser = user.DomainUser;
-
 			using (var transaction = DomainContainer.BeginTransaction())
 			{
-				DomainContainer.Users.Attach(domainUser);
+				this.DomainContainer.Users.Attach(user);
 
-				if (domainUser.Roles.Any(r => r.Name == roleName)) return;
+				if (user.Roles.Any(r => r.Name == roleName)) return;
 
-				var role = await FindRoleAsync(roleName);
+				var role = await FindRoleAsync(roleName, cancellationToken);
 
 				if (role == null)
 					throw new IdentityException($"The role '{roleName}' does not exist in the system.");
 
-				domainUser.Roles.Add(role);
+				user.Roles.Add(role);
 
-				await DomainContainer.SaveChangesAsync();
+				await this.DomainContainer.SaveChangesAsync(cancellationToken);
 
 				transaction.Commit();
 			}
@@ -549,15 +608,18 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// Get the roles of a user.
 		/// </summary>
 		/// <param name="user">The user.</param>
+		/// <param name="cancellationToken">Cancellation token for the action.</param>
 		/// <returns>
 		/// Returns a task whose <see cref="Task{T}.Result"/>
 		/// contains the roles names of the user.
 		/// </returns>
-		public Task<IList<string>> GetRolesAsync(IdentityUser<U> user)
+		public Task<IList<string>> GetRolesAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			var roleNames = from role in user.DomainUser.Roles
+			this.DomainContainer.Users.Attach(user);
+
+			var roleNames = from role in user.Roles
 											select role.Name;
 
 			return Task.FromResult<IList<string>>(roleNames.ToList());
@@ -568,17 +630,20 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// </summary>
 		/// <param name="user">The user.</param>
 		/// <param name="roleName">the role name.</param>
+		/// <param name="cancellationToken">Cancellation token for the action.</param>
 		/// <returns>
 		/// Returns a task whose <see cref="Task{T}.Result"/>
 		/// determines whether the user has the role.
 		/// </returns>
-		public Task<bool> IsInRoleAsync(IdentityUser<U> user, string roleName)
+		public Task<bool> IsInRoleAsync(U user, string roleName, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (roleName == null) throw new ArgumentNullException(nameof(roleName));
 
+			this.DomainContainer.Users.Attach(user);
+
 			return Task.FromResult(
-				user.DomainUser.Roles.Any(role => role.Name == roleName));
+				user.Roles.Any(role => role.Name == roleName));
 		}
 
 		/// <summary>
@@ -587,43 +652,65 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// </summary>
 		/// <param name="user">The user.</param>
 		/// <param name="roleName">The name of the role to remove from the user.</param>
+		/// <param name="cancellationToken">Cancellation token for the action.</param>
 		/// <returns>Returns a task for the operation.</returns>
-		public virtual async Task RemoveFromRoleAsync(IdentityUser<U> user, string roleName)
+		public virtual async Task RemoveFromRoleAsync(U user, string roleName, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (roleName == null) throw new ArgumentNullException(nameof(roleName));
 
-			var domainUser = user.DomainUser;
-
 			using (var transaction = DomainContainer.BeginTransaction())
 			{
-				DomainContainer.Users.Attach(domainUser);
+				this.DomainContainer.Users.Attach(user);
 
-				var removedRole = domainUser.Roles.Where(r => r.Name == roleName).FirstOrDefault();
+				var removedRole = user.Roles.Where(r => r.Name == roleName).FirstOrDefault();
 
-				if (removedRole == null) return;
+				if (removedRole == null)
+				{
+					transaction.Pass();
 
-				domainUser.Roles.Add(removedRole);
+					return;
+				}
 
-				await DomainContainer.SaveChangesAsync();
+				user.Roles.Remove(removedRole);
+
+				await this.DomainContainer.SaveChangesAsync(cancellationToken);
 
 				transaction.Commit();
 			}
 		}
 
+		/// <summary>
+		/// Get the users having a role. If the role doesn't exist, returns the empty list.
+		/// </summary>
+		/// <param name="roleName">The name of the role.</param>
+		/// <param name="cancellationToken">Cancellation token for the action.</param>
+		/// <returns>Returns the list of users having the role.</returns>
+		public async Task<IList<U>> GetUsersInRoleAsync(string roleName, CancellationToken cancellationToken)
+		{
+			if (roleName == null) throw new ArgumentNullException(nameof(roleName));
+
+			var users = from u in this.DomainContainer.Users
+									where u.Roles.Any(r => r.Name == roleName)
+									select u;
+
+			return await users.ToListAsync(cancellationToken);
+		}
+
 		#endregion
 
-		#region IUserEmailStore<IdentityUser<U>,long> Members
+		#region IUserEmailStore<U,long> Members
 
 		/// <summary>
 		/// Find a user by her e-mail.
 		/// </summary>
 		/// <param name="email">The e-mail.</param>
+		/// <param name="cancellationToken">Cancellation token for the operation.</param>
 		/// <returns>
 		/// Returns a task whose <see cref="Task{T}.Result"/> contains 
 		/// the user found or null.
 		/// </returns>
-		public virtual async Task<IdentityUser<U>> FindByEmailAsync(string email)
+		public virtual async Task<U> FindByEmailAsync(string email, CancellationToken cancellationToken)
 		{
 			if (email == null) throw new ArgumentNullException(nameof(email));
 
@@ -633,42 +720,41 @@ namespace Grammophone.Domos.AspNet.Identity
 											where user.Email == email && user.RegistrationStatus != RegistrationStatus.Revoked
 											select user;
 
-			var userFound = await userQuery.FirstOrDefaultAsync();
+			var userFound = await userQuery.FirstOrDefaultAsync(cancellationToken);
 
-			if (userFound != null)
-				return new IdentityUser<U>(userFound);
-			else
-				return null;
+			return userFound;
 		}
 
 		/// <summary>
 		/// Get the e-mail of a user.
 		/// </summary>
 		/// <param name="user">The user.</param>
+		/// <param name="cancellationToken">Ignored; the action is immediate.</param>
 		/// <returns>
 		/// Returns a task whose <see cref="Task{T}.Result"/> contains 
 		/// the user's e-mail.
 		/// </returns>
-		public Task<string> GetEmailAsync(IdentityUser<U> user)
+		public Task<string> GetEmailAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			return Task.FromResult(user.DomainUser.Email);
+			return Task.FromResult(user.Email);
 		}
 
 		/// <summary>
 		/// Determine whether a user's e-mail is confirmed.
 		/// </summary>
 		/// <param name="user">the user.</param>
+		/// <param name="cancellationToken">Ignored; the action is immediate.</param>
 		/// <returns>
 		/// Returns a task whose <see cref="Task{T}.Result"/> contains 
 		/// true if the user has her e-mail confirmed.
 		/// </returns>
-		public Task<bool> GetEmailConfirmedAsync(IdentityUser<U> user)
+		public Task<bool> GetEmailConfirmedAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			return Task.FromResult(user.DomainUser.RegistrationStatus != RegistrationStatus.PendingVerification);
+			return Task.FromResult(user.RegistrationStatus != RegistrationStatus.PendingVerification);
 		}
 
 		/// <summary>
@@ -676,19 +762,20 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// </summary>
 		/// <param name="user">The user.</param>
 		/// <param name="email">the user's e-mail.</param>
+		/// <param name="cancellationToken">Cancellation token for the operation.</param>
 		/// <returns>Returns a task which completes the operation.</returns>
-		public virtual async Task SetEmailAsync(IdentityUser<U> user, string email)
+		public virtual async Task SetEmailAsync(U user, string email, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (email == null) throw new ArgumentNullException(nameof(email));
 
 			using (var transaction = DomainContainer.BeginTransaction())
 			{
-				user.DomainUser.Email = email;
+				user.Email = email;
 
-				await OnSettingEmailAsync(user.DomainUser);
+				await OnSettingEmailAsync(user);
 
-				await DomainContainer.SaveChangesAsync();
+				await DomainContainer.SaveChangesAsync(cancellationToken);
 
 				transaction.Commit();
 			}
@@ -699,36 +786,49 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// </summary>
 		/// <param name="user">The user.</param>
 		/// <param name="confirmed">True if the user's e-mail is confirmed.</param>
+		/// <param name="cancellationToken">Cancellation token for the operation.</param>
 		/// <returns>Returns a task which completes the operation.</returns>
-		public virtual async Task SetEmailConfirmedAsync(IdentityUser<U> user, bool confirmed)
+		public virtual async Task SetEmailConfirmedAsync(U user, bool confirmed, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
 			using (var transaction = DomainContainer.BeginTransaction())
 			{
-				var domainUser = user.DomainUser;
-
-				if (domainUser.RegistrationStatus == RegistrationStatus.PendingVerification)
+				if (user.RegistrationStatus == RegistrationStatus.PendingVerification)
 				{
-					domainUser.RegistrationStatus = RegistrationStatus.Verified;
+					user.RegistrationStatus = RegistrationStatus.Verified;
 
-					await OnConfirmingEmailAsync(domainUser);
+					await OnConfirmingEmailAsync(user);
 
-					await DomainContainer.SaveChangesAsync();
+					await DomainContainer.SaveChangesAsync(cancellationToken);
 
 					transaction.Commit();
 				}
 			}
 		}
 
+		/// <summary>
+		/// Default implementation delegates to <see cref="GetEmailAsync(U, CancellationToken)"/>.
+		/// Override to change.
+		/// </summary>
+		public virtual Task<string> GetNormalizedEmailAsync(U user, CancellationToken cancellationToken)
+			=> GetEmailAsync(user, cancellationToken);
+
+		/// <summary>
+		/// Default implementation delegates to <see cref="SetEmailAsync(U, string, CancellationToken)"/>
+		/// Override to change.
+		/// </summary>
+		public virtual Task SetNormalizedEmailAsync(U user, string normalizedEmail, CancellationToken cancellationToken)
+			=> SetEmailAsync(user, normalizedEmail, cancellationToken);
+
 		#endregion
 
-		#region IUserLockoutStore<IdentityUser<U>,long> Members
+		#region IUserLockoutStore<U,long> Members
 
 		/// <summary>
 		/// Always gets zero.
 		/// </summary>
-		public virtual Task<int> GetAccessFailedCountAsync(IdentityUser<U> user)
+		public virtual Task<int> GetAccessFailedCountAsync(U user, CancellationToken cancellationToken)
 		{
 			return Task.FromResult(0);
 		}
@@ -736,89 +836,90 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// <summary>
 		/// Always returns false.
 		/// </summary>
-		public virtual Task<bool> GetLockoutEnabledAsync(IdentityUser<U> user)
+		public virtual Task<bool> GetLockoutEnabledAsync(U user, CancellationToken cancellationToken)
 		{
 			return Task.FromResult(false);
 		}
 
 		/// <summary>
-		/// Returns <see cref="DateTimeOffset.MinValue"/>, representing that the account is not locked.
+		/// Returns null, representing that the account is not locked.
 		/// </summary>
-		public virtual Task<DateTimeOffset> GetLockoutEndDateAsync(IdentityUser<U> user)
+		public virtual Task<DateTimeOffset?> GetLockoutEndDateAsync(U user, CancellationToken cancellationToken)
 		{
-			return Task.FromResult(DateTimeOffset.MinValue);
+			return Task.FromResult<DateTimeOffset?>(null);
 		}
 
 		/// <summary>
 		/// Always returns 1.
 		/// </summary>
-		public virtual Task<int> IncrementAccessFailedCountAsync(IdentityUser<U> user)
+		public virtual Task<int> IncrementAccessFailedCountAsync(U user, CancellationToken cancellationToken)
 		{
 			return Task.FromResult(1);
 		}
 
 		/// <summary>
-		/// This method does notning.
+		/// Not implemented; does nothing. Override to change.
 		/// </summary>
-		public virtual Task ResetAccessFailedCountAsync(IdentityUser<U> user)
+		public virtual Task ResetAccessFailedCountAsync(U user, CancellationToken cancellationToken)
 		{
 			return Task.CompletedTask;
 		}
 
 		/// <summary>
-		/// Not implemented.
+		/// Not implemented; does nothing. Override to change.
 		/// </summary>
-		public virtual Task SetLockoutEnabledAsync(IdentityUser<U> user, bool enabled)
+		public virtual Task SetLockoutEnabledAsync(U user, bool enabled, CancellationToken cancellationToken)
 		{
 			return Task.CompletedTask;
 		}
 
 		/// <summary>
-		/// Not implemented.
+		/// Not implemented; does nothing. Override to change.
 		/// </summary>
-		public virtual Task SetLockoutEndDateAsync(IdentityUser<U> user, DateTimeOffset lockoutEnd)
+		public virtual Task SetLockoutEndDateAsync(U user, DateTimeOffset? lockoutEnd, CancellationToken cancellationToken)
 		{
 			return Task.CompletedTask;
 		}
 
 		#endregion
 
-		#region IUserTwoFactorStore<IdentityUser<U>,long> Members
+		#region IUserTwoFactorStore<U,long> Members
 
 		/// <summary>
-		/// Always returns false.
+		/// Always returns false. Override to change.
 		/// </summary>
-		public virtual Task<bool> GetTwoFactorEnabledAsync(IdentityUser<U> user)
+		public virtual Task<bool> GetTwoFactorEnabledAsync(U user, CancellationToken cancellationToken)
 		{
 			return Task.FromResult(false);
 		}
 
 		/// <summary>
-		/// Not implemented.
+		/// Does nothing. Override to change.
 		/// </summary>
-		public virtual Task SetTwoFactorEnabledAsync(IdentityUser<U> user, bool enabled)
+		public virtual Task SetTwoFactorEnabledAsync(U user, bool enabled, CancellationToken cancellationToken)
 		{
 			return Task.CompletedTask;
 		}
 
 		#endregion
 
-		#region IUserSecurityStampStore<IdentityUser<U>,long> Members
+		#region IUserSecurityStampStore<U,long> Members
 
 		/// <summary>
 		/// Get the security stamp of a user.
 		/// </summary>
 		/// <param name="user">The identity user to retrieve the security stamp from.</param>
+		/// <param name="cancellationToken">The cancellation token for the operation.</param>
 		/// <returns>
 		/// Returns a task whose result contains the user's <see cref="User.SecurityStamp"/>.
 		/// </returns>
-		public virtual async Task<string> GetSecurityStampAsync(IdentityUser<U> user)
+		public virtual async Task<string> GetSecurityStampAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			await OnGettingSecurityStampAsync(user.DomainUser);
+			await OnGettingSecurityStampAsync(user);
 
-			return user.DomainUser.SecurityStamp;
+			return user.SecurityStamp;
 		}
 
 		/// <summary>
@@ -826,22 +927,23 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// </summary>
 		/// <param name="user">The identity user to assign the security stamp to.</param>
 		/// <param name="stamp">The stamp to assign.</param>
+		/// <param name="cancellationToken">The cancellation token for the operation.</param>
 		/// <returns>Returns a task completing the action.</returns>
 		/// <remarks>
 		/// This implementation writes to the <see cref="User.SecurityStamp"/> 
 		/// property of the <see cref="User"/>.
 		/// </remarks>
-		public virtual async Task SetSecurityStampAsync(IdentityUser<U> user, string stamp)
+		public virtual async Task SetSecurityStampAsync(U user, string stamp, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
 			using (var transaction = this.DomainContainer.BeginTransaction())
 			{
-				user.DomainUser.SecurityStamp = stamp;
+				user.SecurityStamp = stamp;
 
-				await OnSettingSecurityStampAsync(user.DomainUser);
+				await OnSettingSecurityStampAsync(user);
 
-				await transaction.CommitAsync();
+				await transaction.CommitAsync(cancellationToken);
 			}
 		}
 
@@ -857,15 +959,15 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// This is the point to add default roles, permissions, managers
 		/// to a user. 
 		/// </summary>
-		/// <param name="domainUser">The user to administer.</param>
-		protected virtual async Task OnCreatingUserAsync(U domainUser)
+		/// <param name="user">The user to administer.</param>
+		protected virtual async Task OnCreatingUserAsync(U user)
 		{
 			foreach (var listener in this.userListeners)
 			{
-				await listener.OnCreatingUserAsync(this, domainUser);
+				await listener.OnCreatingUserAsync(this, user);
 			}
 
-			this.CreatingUser?.Invoke(this, domainUser);
+			this.CreatingUser?.Invoke(this, user);
 		}
 
 		/// <summary>
@@ -874,15 +976,15 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// fires the <see cref="UpdatingUser"/> event
 		/// and notifies listeners.
 		/// </summary>
-		/// <param name="domainUser">The user to administer.</param>
-		protected virtual async Task OnUpdatingUserAsync(U domainUser)
+		/// <param name="user">The user to administer.</param>
+		protected virtual async Task OnUpdatingUserAsync(U user)
 		{
 			foreach (var listener in this.userListeners)
 			{
-				await listener.OnUpdatingUserAsync(this, domainUser);
+				await listener.OnUpdatingUserAsync(this, user);
 			}
 
-			this.UpdatingUser?.Invoke(this, domainUser);
+			this.UpdatingUser?.Invoke(this, user);
 		}
 
 		/// <summary>
@@ -891,15 +993,15 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// fires the <see cref="DeletingUser"/> event
 		/// and notifies listeners.
 		/// </summary>
-		/// <param name="domainUser">The user to administer.</param>
-		protected virtual async Task OnDeletingUserAsync(U domainUser)
+		/// <param name="user">The user to administer.</param>
+		protected virtual async Task OnDeletingUserAsync(U user)
 		{
 			foreach (var listener in this.userListeners)
 			{
-				await listener.OnDeletingUserAsync(this, domainUser);
+				await listener.OnDeletingUserAsync(this, user);
 			}
 
-			this.DeletingUser?.Invoke(this, domainUser);
+			this.DeletingUser?.Invoke(this, user);
 		}
 
 		/// <summary>
@@ -942,18 +1044,18 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// fires the <see cref="ChangingPassword"/> event
 		/// and notifies listeners.
 		/// </summary>
-		/// <param name="domainUser">
+		/// <param name="user">
 		/// The user holding the 
 		/// password hash.
 		/// </param>
-		protected virtual async Task OnPasswordChangingAsync(U domainUser)
+		protected virtual async Task OnPasswordChangingAsync(U user)
 		{
 			foreach (var listener in this.userListeners)
 			{
-				await listener.OnPasswordChangingAsync(this, domainUser);
+				await listener.OnPasswordChangingAsync(this, user);
 			}
 
-			this.ChangingPassword?.Invoke(this, domainUser);
+			this.ChangingPassword?.Invoke(this, user);
 		}
 
 		/// <summary>
@@ -962,17 +1064,17 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// fires the <see cref="SettingEmail"/> event
 		/// and notifies listeners.
 		/// </summary>
-		/// <param name="domainUser">
+		/// <param name="user">
 		/// Theuser holding the e-mail.
 		/// </param>
-		protected virtual async Task OnSettingEmailAsync(U domainUser)
+		protected virtual async Task OnSettingEmailAsync(U user)
 		{
 			foreach (var listener in this.userListeners)
 			{
-				await listener.OnSettingEmailAsync(this, domainUser);
+				await listener.OnSettingEmailAsync(this, user);
 			}
 
-			this.SettingEmail?.Invoke(this, domainUser);
+			this.SettingEmail?.Invoke(this, user);
 		}
 
 		/// <summary>
@@ -981,18 +1083,18 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// fires the <see cref="SettingEmail"/> event 
 		/// and notifies listeners.
 		/// </summary>
-		/// <param name="domainUser">
+		/// <param name="user">
 		/// The iuser holding the 
 		/// e-mail.
 		/// </param>
-		protected virtual async Task OnConfirmingEmailAsync(U domainUser)
+		protected virtual async Task OnConfirmingEmailAsync(U user)
 		{
 			foreach (var listener in this.userListeners)
 			{
-				await listener.OnConfirmingEmailAsync(this, domainUser);
+				await listener.OnConfirmingEmailAsync(this, user);
 			}
 
-			this.ConfirmingEmail?.Invoke(this, domainUser);
+			this.ConfirmingEmail?.Invoke(this, user);
 		}
 
 		/// <summary>
@@ -1000,15 +1102,15 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// The default implementation fires the <see cref="GettingSecurityStamp"/> event
 		/// and notifies listeners.
 		/// </summary>
-		/// <param name="domainUser">The user whose security stamp is read.</param>
-		protected virtual async Task OnGettingSecurityStampAsync(U domainUser)
+		/// <param name="user">The user whose security stamp is read.</param>
+		protected virtual async Task OnGettingSecurityStampAsync(U user)
 		{
 			foreach (var listener in this.userListeners)
 			{
-				await listener.OnGettingSecurityStampAsync(this, domainUser);
+				await listener.OnGettingSecurityStampAsync(this, user);
 			}
 
-			this.GettingSecurityStamp?.Invoke(this, domainUser);
+			this.GettingSecurityStamp?.Invoke(this, user);
 		}
 
 		/// <summary>
@@ -1016,15 +1118,15 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// The default implementation fires the <see cref="SettingSecurityStamp"/> event
 		/// and notifies listeners.
 		/// </summary>
-		/// <param name="domainUser">The user whose security stamp is set.</param>
-		protected virtual async Task OnSettingSecurityStampAsync(U domainUser)
+		/// <param name="user">The user whose security stamp is set.</param>
+		protected virtual async Task OnSettingSecurityStampAsync(U user)
 		{
 			foreach (var listener in this.userListeners)
 			{
-				await listener.OnSettingSecurityStampAsync(this, domainUser);
+				await listener.OnSettingSecurityStampAsync(this, user);
 			}
 
-			this.SettingSecurityStamp?.Invoke(this, domainUser);
+			this.SettingSecurityStamp?.Invoke(this, user);
 		}
 
 		#endregion
@@ -1035,8 +1137,9 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// Find the role with the given name or return null.
 		/// </summary>
 		/// <param name="roleName">The role name.</param>
+		/// <param name="cancellationToken">Cancellation token for the operation.</param>
 		/// <returns>Returna a task whose result contains the found role or null.</returns>
-		private Task<Role> FindRoleAsync(string roleName)
+		private Task<Role> FindRoleAsync(string roleName, CancellationToken cancellationToken)
 		{
 			if (roleName == null) throw new ArgumentNullException("roleName");
 
@@ -1044,7 +1147,7 @@ namespace Grammophone.Domos.AspNet.Identity
 											where role.Name == roleName
 											select role;
 
-			return roleQuery.FirstOrDefaultAsync();
+			return roleQuery.FirstOrDefaultAsync(cancellationToken);
 		}
 
 		/// <summary>
@@ -1057,14 +1160,29 @@ namespace Grammophone.Domos.AspNet.Identity
 		/// </exception>
 		private static RegistrationProvider GetRegistrationProvider(UserLoginInfo login)
 		{
+			if (login == null) throw new ArgumentNullException(nameof(login));
+
+			return GetRegistrationProvider(login.LoginProvider);
+		}
+
+		/// <summary>
+		/// Get the <see cref="RegistrationProvider"/> which corresponds to 
+		/// a given login provider.
+		/// </summary>
+		/// <exception cref="IdentityException">
+		/// Thrown when the <paramref name="loginProvider"/>
+		/// can't be mapped to a <see cref="RegistrationProvider"/>.
+		/// </exception>
+		private static RegistrationProvider GetRegistrationProvider(string loginProvider)
+		{
 			try
 			{
 				return
-					(RegistrationProvider)Enum.Parse(typeof(RegistrationProvider), login.LoginProvider, true);
+					(RegistrationProvider)Enum.Parse(typeof(RegistrationProvider), loginProvider, true);
 			}
 			catch (Exception ex)
 			{
-				throw new IdentityException($"Unknown login provider '{login.LoginProvider}'", ex);
+				throw new IdentityException($"Unknown login provider '{loginProvider}'", ex);
 			}
 		}
 

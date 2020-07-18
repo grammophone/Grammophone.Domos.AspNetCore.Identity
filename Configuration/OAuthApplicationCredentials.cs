@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Grammophone.Domos.AspNet.Identity.Configuration
+namespace Grammophone.Domos.AspNetCore.Identity.Configuration
 {
 	/// <summary>
 	/// Application cerdentials for accessing an OAuth provider.

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Grammophone.Domos.AspNet.Identity
+namespace Grammophone.Domos.AspNetCore.Identity
 {
 	/// <summary>
 	/// Exception of the ASP.NET Identity adaptation for the 

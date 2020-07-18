@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Grammophone.Domos.Domain;
 
-namespace Grammophone.Domos.AspNet.Identity
+namespace Grammophone.Domos.AspNetCore.Identity
 {
 	/// <summary>
 	/// Interface for configured event listeners.
