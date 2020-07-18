@@ -19,7 +19,7 @@ where the template argument `U` must be derived from Domos `User`:
 * `IUserSecurityStampStore<U>`
 
 Allmost all methods are virtual to allow specialization or change of
-behavior. There `UserStore<U>` class also offers the
+behavior. The `UserStore<U>` class also offers the
 following events to subscribe:
 * `CreatingUser`
 * `UpdatingUser`
