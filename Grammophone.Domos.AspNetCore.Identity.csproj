@@ -4,9 +4,9 @@
 		<TargetFrameworks>net472;netstandard2.1;</TargetFrameworks>
 		<AssemblyTitle>Grammophone.Domos.AspNetCore.Identity</AssemblyTitle>
     <Product>Grammophone.Domos.AspNetCore.Identity</Product>
-    <Copyright>Copyright ©  2020</Copyright>
+    <Copyright>Copyright © 2020</Copyright>
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <DocumentationFile>bin\$(Configuration)\Grammophone.Domos.AspNet.Identity.XML</DocumentationFile>
+    <DocumentationFile>bin\$(Configuration)\Grammophone.Domos.AspNetCore.Identity.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
