@@ -22,6 +22,7 @@
     <ProjectReference Include="..\Grammophone.DataAccess\Grammophone.DataAccess.csproj" />
     <ProjectReference Include="..\Grammophone.Domos.DataAccess\Grammophone.Domos.DataAccess.csproj" />
     <ProjectReference Include="..\Grammophone.Domos.Domain\Grammophone.Domos.Domain.csproj" />
+    <ProjectReference Include="..\Grammophone.Domos.Environment\Grammophone.Domos.Environment.csproj" />
     <ProjectReference Include="..\Grammophone.Setup\Grammophone.Setup.csproj" />
   </ItemGroup>
 	<ItemGroup>

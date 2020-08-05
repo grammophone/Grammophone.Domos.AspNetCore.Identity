@@ -61,4 +61,6 @@ sibling directories:
 * [Grammophone.DataAccess](https://github.com/grammophone/Grammophone.DataAccess)
 * [Grammophone.Domos.DataAccess](https://github.com/grammophone/Grammophone.Domos.DataAccess)
 * [Grammophone.Domos.Domain](https://github.com/grammophone/Grammophone.Domos.Domain)
+* [Grammophone.Domos.Environment](https://github.com/grammophone/Grammophone.Domos.Environment)
 * [Grammophone.Setup](https://github.com/grammophone/Grammophone.Setup)
+* 
