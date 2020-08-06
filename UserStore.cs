@@ -196,7 +196,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 				user.SecurityStamp = String.Empty;
 				user.CreationDate = DateTime.UtcNow;
-				if (user.Guid == default(Guid)) user.Guid = Guid.NewGuid();
+				if (user.Guid == default) user.Guid = Guid.NewGuid();
 
 				await OnCreatingUserAsync(user);
 
