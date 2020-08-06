@@ -72,6 +72,8 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 		private readonly IEnumerable<IUserListener<U>> userListeners;
 
+		private bool hasBeenDisposed = false;
+
 		#endregion
 
 		#region Construction
@@ -357,7 +359,11 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// Default implementation delegates to <see cref="SetUserNameAsync(U, string, CancellationToken)"/>.
 		/// </summary>
 		public Task SetNormalizedUserNameAsync(U user, string normalizedName, CancellationToken cancellationToken)
-			=> SetUserNameAsync(user, normalizedName, cancellationToken);
+		{
+			if (normalizedName == null) throw new ArgumentNullException(nameof(normalizedName));
+
+			return SetUserNameAsync(user, normalizedName.ToLower(), cancellationToken);
+		}
 
 		#endregion
 
@@ -368,8 +374,13 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// </summary>
 		public void Dispose()
 		{
-			this.DomainContainer.Dispose();
-			this.Settings.Dispose();
+			if (!hasBeenDisposed)
+			{
+				this.DomainContainer.Dispose();
+				this.Settings.Dispose();
+
+				hasBeenDisposed = true;
+			}
 		}
 
 		#endregion
@@ -824,7 +835,11 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// Override to change.
 		/// </summary>
 		public virtual Task SetNormalizedEmailAsync(U user, string normalizedEmail, CancellationToken cancellationToken)
-			=> SetEmailAsync(user, normalizedEmail, cancellationToken);
+		{
+			if (normalizedEmail == null) throw new ArgumentNullException(nameof(normalizedEmail));
+
+			return SetEmailAsync(user, normalizedEmail.ToLower(), cancellationToken);
+		}
 
 		#endregion
 
