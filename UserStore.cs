@@ -19,6 +19,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 	/// </summary>
 	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
 	public class UserStore<U> :
+		Store<U>,
 		IUserStore<U>,
 		IQueryableUserStore<U>,
 		IUserLoginStore<U>,
@@ -72,8 +73,6 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 		private readonly IEnumerable<IUserListener<U>> userListeners;
 
-		private bool hasBeenDisposed = false;
-
 		#endregion
 
 		#region Construction
@@ -86,17 +85,9 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// a <see cref="IUsersDomainContainer{U}"/> is defined
 		/// and optionally any listeners implementing <see cref="IUserListener{U}"/>.
 		/// </param>
-		public UserStore(string configurationSectionName)
+		public UserStore(string configurationSectionName) : base(configurationSectionName)
 		{
-			if (configurationSectionName == null) throw new ArgumentNullException(nameof(configurationSectionName));
-
-			var identitySettings = Settings.Load(configurationSectionName);
-
-			this.Settings = identitySettings;
-
-			this.DomainContainer = identitySettings.Resolve<IUsersDomainContainer<U>>();
-
-			this.userListeners = identitySettings.ResolveAll<IUserListener<U>>().OrderBy(l => l.Order);
+			this.userListeners = this.Settings.ResolveAll<IUserListener<U>>().OrderBy(l => l.Order);
 		}
 
 		#endregion
@@ -156,16 +147,6 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		#endregion
 
 		#region Public properties
-
-		/// <summary>
-		/// The container of the domain model.
-		/// </summary>
-		public IUsersDomainContainer<U> DomainContainer { get; private set; }
-
-		/// <summary>
-		/// The identity settings container.
-		/// </summary>
-		public Settings Settings { get; private set; }
 
 		/// <summary>
 		/// The users in the system.
@@ -363,24 +344,6 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			if (normalizedName == null) throw new ArgumentNullException(nameof(normalizedName));
 
 			return SetUserNameAsync(user, normalizedName.ToLower(), cancellationToken);
-		}
-
-		#endregion
-
-		#region IDisposable Members
-
-		/// <summary>
-		/// Dispose the store. The store is unusable after the method is invoked.
-		/// </summary>
-		public void Dispose()
-		{
-			if (!hasBeenDisposed)
-			{
-				this.DomainContainer.Dispose();
-				this.Settings.Dispose();
-
-				hasBeenDisposed = true;
-			}
 		}
 
 		#endregion
