@@ -15,11 +15,12 @@ namespace Grammophone.Domos.AspNetCore.Identity
 	/// Implementation of an ASP.NET Identity user store that is based
 	/// on user domain object derived from <see cref="User"/>.
 	/// It expects a Unity container defining an <see cref="IUsersDomainContainer{U}"/>
-	/// and optionally any listeners implementing <see cref="IUserListener{U}"/>.
+	/// and optionally any listeners implementing <see cref="IUserListener{U, D}"/>.
 	/// </summary>
 	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
-	public class UserStore<U> :
-		Store<U>,
+	/// <typeparam name="D">The type of the domain container, derived from <see cref="IUsersDomainContainer{U}"/>.</typeparam>
+	public class UserStore<U, D> :
+		Store<U, D>,
 		IUserStore<U>,
 		IQueryableUserStore<U>,
 		IUserLoginStore<U>,
@@ -30,6 +31,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		IUserTwoFactorStore<U>,
 		IUserSecurityStampStore<U>
 		where U : User
+		where D : IUsersDomainContainer<U>
 	{
 		#region Auxilliary classes
 
@@ -71,7 +73,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 		#region Private fields
 
-		private readonly IEnumerable<IUserListener<U>> userListeners;
+		private readonly IEnumerable<IUserListener<U, D>> userListeners;
 
 		#endregion
 
@@ -83,11 +85,11 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="configurationSectionName">
 		/// The name of a unity configuration section, where
 		/// a <see cref="IUsersDomainContainer{U}"/> is defined
-		/// and optionally any listeners implementing <see cref="IUserListener{U}"/>.
+		/// and optionally any listeners implementing <see cref="IUserListener{U, D}"/>.
 		/// </param>
 		public UserStore(string configurationSectionName) : base(configurationSectionName)
 		{
-			this.userListeners = this.Settings.ResolveAll<IUserListener<U>>().OrderBy(l => l.Order);
+			this.userListeners = this.Settings.ResolveAll<IUserListener<U, D>>().OrderBy(l => l.Order);
 		}
 
 		#endregion
@@ -97,52 +99,52 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <summary>
 		/// Fired when a new user is being created.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U>, U> CreatingUser;
+		public event NotificationDelegate<UserStore<U, D>, U> CreatingUser;
 
 		/// <summary>
 		/// Fired when a user is being updated.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U>, U> UpdatingUser;
+		public event NotificationDelegate<UserStore<U, D>, U> UpdatingUser;
 
 		/// <summary>
 		/// Fired when a user is being deleted.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U>, U> DeletingUser;
+		public event NotificationDelegate<UserStore<U, D>, U> DeletingUser;
 
 		/// <summary>
 		/// Fired when an external login is added to a user.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U>, Registration> AddingLogin;
+		public event NotificationDelegate<UserStore<U, D>, Registration> AddingLogin;
 
 		/// <summary>
 		/// Fired when an external login is removed from a user.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U>, Registration> RemovingLogin;
+		public event NotificationDelegate<UserStore<U, D>, Registration> RemovingLogin;
 
 		/// <summary>
 		/// Fired when a user's password is changed.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U>, U> ChangingPassword;
+		public event NotificationDelegate<UserStore<U, D>, U> ChangingPassword;
 
 		/// <summary>
 		/// Fired when a user's e-mail is set.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U>, U> SettingEmail;
+		public event NotificationDelegate<UserStore<U, D>, U> SettingEmail;
 
 		/// <summary>
 		/// Fired when a user's e-mail is verified.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U>, U> ConfirmingEmail;
+		public event NotificationDelegate<UserStore<U, D>, U> ConfirmingEmail;
 
 		/// <summary>
 		/// Fired when the security stamp is read.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U>, U> GettingSecurityStamp;
+		public event NotificationDelegate<UserStore<U, D>, U> GettingSecurityStamp;
 
 		/// <summary>
 		/// Fired when the security stamp is set.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U>, U> SettingSecurityStamp;
+		public event NotificationDelegate<UserStore<U, D>, U> SettingSecurityStamp;
 
 		#endregion
 
@@ -155,7 +157,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 		#endregion
 
-		#region IUserStore<U> Members
+		#region IUserStore<U, D> Members
 
 		/// <summary>
 		/// Create a user.

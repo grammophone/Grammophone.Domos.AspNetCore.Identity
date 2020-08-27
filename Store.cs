@@ -13,8 +13,10 @@ namespace Grammophone.Domos.AspNetCore.Identity
 	/// Abstract base class for store of authentication-related entities.
 	/// </summary>
 	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
-	public abstract class Store<U> : IDisposable
+	/// <typeparam name="D">The type of the domain container, derived from <see cref="IUsersDomainContainer{U}"/>.</typeparam>
+	public abstract class Store<U, D> : IDisposable
 		where U : User
+		where D : IUsersDomainContainer<U>
 	{
 		#region Private fields
 
@@ -39,7 +41,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 			this.Settings = identitySettings;
 
-			this.DomainContainer = identitySettings.Resolve<IUsersDomainContainer<U>>();
+			this.DomainContainer = identitySettings.Resolve<D>();
 		}
 
 		#endregion
@@ -49,7 +51,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <summary>
 		/// The container of the domain model.
 		/// </summary>
-		protected IUsersDomainContainer<U> DomainContainer { get; }
+		protected D DomainContainer { get; }
 
 		/// <summary>
 		/// The identity settings container.

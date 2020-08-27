@@ -18,8 +18,10 @@ namespace Grammophone.Domos.AspNetCore.Identity
 	/// It expects a Unity container defining an <see cref="IUsersDomainContainer{U}"/>.
 	/// </summary>
 	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
-	public class RoleStore<U> : Store<U>, IRoleStore<Role>
+	/// <typeparam name="D">The type of the domain container, derived from <see cref="IUsersDomainContainer{U}"/>.</typeparam>
+	public class RoleStore<U, D> : Store<U, D>, IRoleStore<Role>
 		where U : User
+		where D : IUsersDomainContainer<U>
 	{
 		#region Construction
 
