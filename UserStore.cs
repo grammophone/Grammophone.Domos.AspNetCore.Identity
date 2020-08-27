@@ -624,7 +624,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			this.DomainContainer.Users.Attach(user);
 
 			return Task.FromResult(
-				user.Roles.Any(role => role.Name == roleName));
+				user.Roles.Any(role => String.Compare(role.Name, roleName, StringComparison.CurrentCultureIgnoreCase) == 0));
 		}
 
 		/// <summary>
