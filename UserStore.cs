@@ -15,12 +15,13 @@ namespace Grammophone.Domos.AspNetCore.Identity
 	/// Implementation of an ASP.NET Identity user store that is based
 	/// on user domain object derived from <see cref="User"/>.
 	/// It expects a Unity container defining an <see cref="IUsersDomainContainer{U}"/>
-	/// and optionally any listeners implementing <see cref="IUserListener{U, D}"/>.
+	/// and optionally any listeners implementing <see cref="IUserListener{UB, U, D}"/>.
 	/// </summary>
-	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
+	/// <typeparam name="UB">The base type of the user, derived from <see cref="User"/>.</typeparam>
+	/// <typeparam name="U">The type of the user, derived from <typeparamref name="UB"/>.</typeparam>
 	/// <typeparam name="D">The type of the domain container, derived from <see cref="IUsersDomainContainer{U}"/>.</typeparam>
-	public class UserStore<U, D> :
-		Store<U, D>,
+	public class UserStore<UB, U, D> :
+		Store<UB, D>,
 		IUserStore<U>,
 		IQueryableUserStore<U>,
 		IUserLoginStore<U>,
@@ -30,8 +31,9 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		IUserLockoutStore<U>,
 		IUserTwoFactorStore<U>,
 		IUserSecurityStampStore<U>
-		where U : User
-		where D : IUsersDomainContainer<U>
+		where UB : User
+		where U : UB
+		where D : IUsersDomainContainer<UB>
 	{
 		#region Auxilliary classes
 
@@ -73,7 +75,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 		#region Private fields
 
-		private readonly IEnumerable<IUserListener<U, D>> userListeners;
+		private readonly IEnumerable<IUserListener<UB, U, D>> userListeners;
 
 		#endregion
 
@@ -85,11 +87,11 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="configurationSectionName">
 		/// The name of a unity configuration section, where
 		/// a <see cref="IUsersDomainContainer{U}"/> is defined
-		/// and optionally any listeners implementing <see cref="IUserListener{U, D}"/>.
+		/// and optionally any listeners implementing <see cref="IUserListener{UB, U, D}"/>.
 		/// </param>
 		public UserStore(string configurationSectionName) : base(configurationSectionName)
 		{
-			this.userListeners = this.Settings.ResolveAll<IUserListener<U, D>>().OrderBy(l => l.Order);
+			this.userListeners = this.Settings.ResolveAll<IUserListener<UB, U, D>>().OrderBy(l => l.Order);
 		}
 
 		#endregion
@@ -99,61 +101,61 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <summary>
 		/// Fired when a new user is being created.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U, D>, U> CreatingUser;
+		public event NotificationDelegate<UserStore<UB, U, D>, U> CreatingUser;
 
 		/// <summary>
 		/// Fired when a user is being updated.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U, D>, U> UpdatingUser;
+		public event NotificationDelegate<UserStore<UB, U, D>, U> UpdatingUser;
 
 		/// <summary>
 		/// Fired when a user is being deleted.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U, D>, U> DeletingUser;
+		public event NotificationDelegate<UserStore<UB, U, D>, U> DeletingUser;
 
 		/// <summary>
 		/// Fired when an external login is added to a user.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U, D>, Registration> AddingLogin;
+		public event NotificationDelegate<UserStore<UB, U, D>, Registration> AddingLogin;
 
 		/// <summary>
 		/// Fired when an external login is removed from a user.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U, D>, Registration> RemovingLogin;
+		public event NotificationDelegate<UserStore<UB, U, D>, Registration> RemovingLogin;
 
 		/// <summary>
 		/// Fired when a user's password is changed.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U, D>, U> ChangingPassword;
+		public event NotificationDelegate<UserStore<UB, U, D>, U> ChangingPassword;
 
 		/// <summary>
 		/// Fired when a user's e-mail is set.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U, D>, U> SettingEmail;
+		public event NotificationDelegate<UserStore<UB, U, D>, U> SettingEmail;
 
 		/// <summary>
 		/// Fired when a user's e-mail is verified.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U, D>, U> ConfirmingEmail;
+		public event NotificationDelegate<UserStore<UB, U, D>, U> ConfirmingEmail;
 
 		/// <summary>
 		/// Fired when the security stamp is read.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U, D>, U> GettingSecurityStamp;
+		public event NotificationDelegate<UserStore<UB, U, D>, U> GettingSecurityStamp;
 
 		/// <summary>
 		/// Fired when the security stamp is set.
 		/// </summary>
-		public event NotificationDelegate<UserStore<U, D>, U> SettingSecurityStamp;
+		public event NotificationDelegate<UserStore<UB, U, D>, U> SettingSecurityStamp;
 
 		#endregion
 
 		#region Public properties
 
 		/// <summary>
-		/// The users in the system.
+		/// The users of type <typeparamref name="U"/> in the system.
 		/// </summary>
-		public IQueryable<U> Users => this.DomainContainer.Users;
+		public IQueryable<U> Users => this.DomainContainer.Users.OfType<U>();
 
 		#endregion
 
@@ -238,7 +240,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			}
 
 			var user =
-				await DomainContainer.Users
+				await DomainContainer.Users.OfType<U>()
 				.Include(u => u.Registrations)
 				.Include(u => u.Roles)
 				.Where(u => u.RegistrationStatus != RegistrationStatus.Revoked)
@@ -261,7 +263,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			if (userName == null) throw new ArgumentNullException(nameof(userName));
 
 			var user =
-				await DomainContainer.Users
+				await DomainContainer.Users.OfType<U>()
 				.Include(u => u.Registrations)
 				.Include(u => u.Roles)
 				.Where(u => u.RegistrationStatus != RegistrationStatus.Revoked)
@@ -301,7 +303,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		}
 
 		/// <summary>
-		/// Returns the ID of the user in string representation.>
+		/// Returns the ID of the user in string representation.
 		/// </summary>
 		public Task<string> GetUserIdAsync(U user, CancellationToken cancellationToken)
 		{
@@ -323,13 +325,15 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <summary>
 		/// Sets the <see cref="User.UserName"/> property of the user.
 		/// </summary>
-		public virtual Task SetUserNameAsync(U user, string userName, CancellationToken cancellationToken)
+		public virtual async Task SetUserNameAsync(U user, string userName, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
 			user.UserName = userName;
 
-			return Task.CompletedTask;
+			await OnUpdatingUserAsync(user);
+
+			await this.DomainContainer.SaveChangesAsync(cancellationToken);
 		}
 
 		/// <summary>
@@ -353,10 +357,10 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		#region IUserLoginStore<U,long> Members
 
 		/// <summary>
-		/// Add a <see cref="Registration"/> to a <see cref="User"/>.
+		/// Add a <see cref="Registration"/> to a user of type <typeparamref name="U"/>.
 		/// </summary>
 		/// <param name="user">
-		/// The Identity user which wraps a <see cref="User"/>.
+		/// The user.
 		/// </param>
 		/// <param name="cancellationToken">Cancellation token for the operation.</param>
 		/// <param name="login">
@@ -408,7 +412,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 			var registrationProvider = GetRegistrationProvider(loginProvider);
 
-			var userQuery = from user in DomainContainer.Users
+			var userQuery = from user in DomainContainer.Users.OfType<U>()
 											.Include(user => user.Registrations)
 											.Include(user => user.Roles)
 											where
@@ -537,13 +541,13 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="passwordHash">The password hash to set.</param>
 		/// <param name="cancellationToken">Ignored; the action is immediate.</param>
 		/// <returns>Returns a task for the operation.</returns>
-		public Task SetPasswordHashAsync(U user, string passwordHash, CancellationToken cancellationToken)
+		public async Task SetPasswordHashAsync(U user, string passwordHash, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
 			user.PasswordHash = passwordHash;
 
-			return Task.CompletedTask;
+			await this.DomainContainer.SaveChangesAsync(cancellationToken);
 		}
 
 		#endregion
@@ -671,7 +675,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		{
 			if (roleName == null) throw new ArgumentNullException(nameof(roleName));
 
-			var users = from u in this.DomainContainer.Users
+			var users = from u in this.DomainContainer.Users.OfType<U>()
 									where u.Roles.Any(r => r.Name == roleName)
 									select u;
 
@@ -695,7 +699,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		{
 			if (email == null) throw new ArgumentNullException(nameof(email));
 
-			var userQuery = from user in DomainContainer.Users
+			var userQuery = from user in DomainContainer.Users.OfType<U>()
 											.Include(u => u.Registrations)
 											.Include(u => u.Roles)
 											where user.Email == email && user.RegistrationStatus != RegistrationStatus.Revoked
@@ -773,18 +777,13 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			using (var transaction = DomainContainer.BeginTransaction())
+			if (user.RegistrationStatus == RegistrationStatus.PendingVerification)
 			{
-				if (user.RegistrationStatus == RegistrationStatus.PendingVerification)
-				{
-					user.RegistrationStatus = RegistrationStatus.Verified;
+				user.RegistrationStatus = RegistrationStatus.Verified;
 
-					await OnConfirmingEmailAsync(user);
+				await OnConfirmingEmailAsync(user);
 
-					await DomainContainer.SaveChangesAsync(cancellationToken);
-
-					transaction.Commit();
-				}
+				await this.DomainContainer.SaveChangesAsync(cancellationToken);
 			}
 		}
 
@@ -1172,5 +1171,23 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		}
 
 		#endregion
+	}
+
+	/// <summary>
+	/// Implementation of an ASP.NET Identity user store that is based
+	/// on user domain object derived from <see cref="User"/>.
+	/// It expects a Unity container defining an <see cref="IUsersDomainContainer{U}"/>
+	/// and optionally any listeners implementing <see cref="IUserListener{UB, U, D}"/>.
+	/// </summary>
+	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
+	/// <typeparam name="D">The type of the domain container, derived from <see cref="IUsersDomainContainer{U}"/>.</typeparam>
+	public class UserStore<U, D> : UserStore<U, U, D>
+		where U : User
+		where D : IUsersDomainContainer<U>
+	{
+		/// <inheritdoc/>
+		public UserStore(string configurationSectionName) : base(configurationSectionName)
+		{
+		}
 	}
 }
