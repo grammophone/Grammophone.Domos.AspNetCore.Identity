@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <ProjectGuid>{9B58F66E-C86F-4EB7-B444-9D8F8A96D938}</ProjectGuid>
+    <ProjectGuid>{BB508AD1-1433-47BA-A19D-0C937E8E5E85}</ProjectGuid>
 		<TargetFrameworks>net472;netstandard2.1;</TargetFrameworks>
 		<AssemblyTitle>Grammophone.Domos.AspNetCore.Identity</AssemblyTitle>
     <Product>Grammophone.Domos.AspNetCore.Identity</Product>
