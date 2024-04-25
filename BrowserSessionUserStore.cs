@@ -420,4 +420,31 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 		#endregion
 	}
+
+	/// <summary>
+	/// An an ASP.NET Identity user store implementation that tracks browser sessions.
+	/// It expects a Unity container defining an <see cref="IUsersDomainContainer{U}"/>,
+	/// a <see cref="IPLocation.ILocationProviderFactory"/>, a <see cref="IPLocation.Caching.LocationCache"/>
+	/// and optionally any listeners implementing <see cref="IUserListener{U, U, D}"/>.
+	/// </summary>
+	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
+	/// <typeparam name="D">The type of the domain container, derived from <see cref="IUsersDomainContainer{U}"/>.</typeparam>
+	public class BrowserSessionUserStore<U, D> : BrowserSessionUserStore<U, U, D>
+		where U : User
+		where D : IUsersDomainContainer<U>
+	{
+		/// <summary>
+		/// Create.
+		/// </summary>
+		/// <param name="configurationSectionName">
+		/// The name of a unity configuration section, where
+		/// a <see cref="IUsersDomainContainer{U}"/> is defined
+		/// and optionally any listeners implementing <see cref="IUserListener{U, U, D}"/>.
+		/// </param>
+		/// <param name="httpContextAccessor">An accessor to the <see cref="HttpContext"/> of the current request.</param>
+		public BrowserSessionUserStore(string configurationSectionName, IHttpContextAccessor httpContextAccessor)
+			: base(configurationSectionName, httpContextAccessor)
+		{
+		}
+	}
 }
