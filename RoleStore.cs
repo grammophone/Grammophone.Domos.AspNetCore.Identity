@@ -98,32 +98,32 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		}
 
 		/// <inheritdoc/>
-		public Task<Role> FindByIdAsync(string roleId, CancellationToken cancellationToken)
+		public Task<Role?> FindByIdAsync(string roleId, CancellationToken cancellationToken)
 		{
 			if (!long.TryParse(roleId, out long roleIdValue))
 			{
 				throw new ArgumentException("The Role ID is not a valid long integer value.", nameof(roleId));
 			}
 
-			return this.DomainContainer.Roles.SingleAsync(r => r.ID == roleIdValue, cancellationToken);
+			return this.DomainContainer.Roles.SingleOrDefaultAsync(r => r.ID == roleIdValue, cancellationToken);
 		}
 
 		/// <inheritdoc/>
-		public Task<Role> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
+		public Task<Role?> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
 		{
 			if (normalizedRoleName == null) throw new ArgumentNullException(nameof(normalizedRoleName));
 
-			return this.DomainContainer.Roles.SingleAsync(r => r.CodeName == normalizedRoleName, cancellationToken);
+			return this.DomainContainer.Roles.SingleOrDefaultAsync(r => r.CodeName == normalizedRoleName, cancellationToken);
 		}
 
 		/// <summary>
 		/// Returns the role's <see cref="Role.CodeName"/>.
 		/// </summary>
-		public Task<string> GetNormalizedRoleNameAsync(Role role, CancellationToken cancellationToken)
+		public Task<string?> GetNormalizedRoleNameAsync(Role role, CancellationToken cancellationToken)
 		{
 			if (role == null) throw new ArgumentNullException(nameof(role));
 
-			return Task.FromResult(role.CodeName);
+			return Task.FromResult<string?>(role.CodeName);
 		}
 
 		/// <inheritdoc/>
@@ -135,11 +135,11 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		}
 
 		/// <inheritdoc/>
-		public Task<string> GetRoleNameAsync(Role role, CancellationToken cancellationToken)
+		public Task<string?> GetRoleNameAsync(Role role, CancellationToken cancellationToken)
 		{
 			if (role == null) throw new ArgumentNullException(nameof(role));
 
-			return Task.FromResult(role.Name);
+			return Task.FromResult<string?>(role.Name);
 		}
 
 		/// <summary>
@@ -148,7 +148,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="role">The role.</param>
 		/// <param name="normalizedName">The code name to set.</param>
 		/// <param name="cancellationToken">The cancellation token for the operation.</param>
-		public Task SetNormalizedRoleNameAsync(Role role, string normalizedName, CancellationToken cancellationToken)
+		public Task SetNormalizedRoleNameAsync(Role role, string? normalizedName, CancellationToken cancellationToken)
 		{
 			if (role == null) throw new ArgumentNullException(nameof(role));
 			if (normalizedName == null) throw new ArgumentNullException(nameof(normalizedName));
@@ -164,7 +164,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="role">The role.</param>
 		/// <param name="roleName">The name of the role.</param>
 		/// <param name="cancellationToken">The cancellation token for the operation.</param>
-		public Task SetRoleNameAsync(Role role, string roleName, CancellationToken cancellationToken)
+		public Task SetRoleNameAsync(Role role, string? roleName, CancellationToken cancellationToken)
 		{
 			if (role == null) throw new ArgumentNullException(nameof(role));
 			if (roleName == null) throw new ArgumentNullException(nameof(roleName));

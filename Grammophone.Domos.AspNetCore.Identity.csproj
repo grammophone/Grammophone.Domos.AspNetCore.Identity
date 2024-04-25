@@ -1,21 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ProjectGuid>{BB508AD1-1433-47BA-A19D-0C937E8E5E85}</ProjectGuid>
-		<TargetFrameworks>net472;netstandard2.1;</TargetFrameworks>
+		<TargetFrameworks>net8.0;</TargetFrameworks>
 		<AssemblyTitle>Grammophone.Domos.AspNetCore.Identity</AssemblyTitle>
     <Product>Grammophone.Domos.AspNetCore.Identity</Product>
     <Copyright>Copyright © 2020</Copyright>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <DocumentationFile>bin\$(Configuration)\Grammophone.Domos.AspNetCore.Identity.XML</DocumentationFile>
-  </PropertyGroup>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
   </PropertyGroup>
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
   <ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.1.39" />
+		<!--<PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.1.39" />-->
+		<!--<PackageReference Include="Microsoft.AspNetCore.App.Ref" Version="8.0.2" />-->
+		<PackageReference Include="Microsoft.Extensions.Identity.Core" Version="8.0.2" />
 		<PackageReference Include="MyCSharp.HttpUserAgentParser" Version="2.0.2" />
 	</ItemGroup>
   <ItemGroup>

@@ -67,9 +67,9 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// </summary>
 		/// <param name="user">The user.</param>
 		/// <param name="cancellationToken">The cancellation token.</param>
-		public override async Task<string> GetSecurityStampAsync(U user, CancellationToken cancellationToken)
+		public override async Task<string?> GetSecurityStampAsync(U user, CancellationToken cancellationToken)
 		{
-			string fingerprint = TryFindFingerprintClaim();
+			string? fingerprint = TryFindFingerprintClaim();
 
 			if (!String.IsNullOrEmpty(fingerprint))
 			{
@@ -94,7 +94,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="cancellationToken">The cancellation token.</param>
 		public override async Task SetSecurityStampAsync(U user, string stamp, CancellationToken cancellationToken)
 		{
-			string fingerprint = TryFindFingerprintClaim();
+			string? fingerprint = TryFindFingerprintClaim();
 
 			var browserSession = await TryGetOrCreateBrowserSessionAsync(user, fingerprint);
 
@@ -119,21 +119,21 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <summary>
 		/// Get an existing browser based on the finger print or create a new one.
 		/// </summary>
-		public async Task<BrowserSession> TryGetOrCreateBrowserSessionAsync(
+		public async Task<BrowserSession?> TryGetOrCreateBrowserSessionAsync(
 						U user,
-						string browserFingerPrint = null)
+						string? browserFingerPrint = null)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			BrowserSession browserSession = null;
-			ClientIpAddress clientIpAddress = null;
+			BrowserSession? browserSession = null;
+			ClientIpAddress? clientIpAddress = null;
 
 			var context = httpContextAccessor.HttpContext;
 
 			// Get client info
-			string userAgentString = context.Request?.GetTypedHeaders()?.Get<string>(HeaderNames.UserAgent);
+			string? userAgentString = context?.Request.Headers.UserAgent.FirstOrDefault();
 
-			string ipAddress = context.Connection?.RemoteIpAddress?.ToString();
+			string? ipAddress = context?.Connection?.RemoteIpAddress?.ToString();
 
 			if (browserFingerPrint != null)
 			{
@@ -204,7 +204,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 						browserSession.IPAddresses.Add(clientIpAddress);
 					}
-					else
+					else if (clientIpAddress != null)
 					{
 						clientIpAddress.LastSeen = DateTime.UtcNow;
 					}
@@ -318,7 +318,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 			var userAgentInfo = HttpUserAgentParser.Parse(userAgent);
 
-			string operatingSystem = userAgentInfo.Platform.HasValue ? userAgentInfo.Platform.Value.Name : null;
+			string? operatingSystem = userAgentInfo.Platform.HasValue ? userAgentInfo.Platform.Value.Name : null;
 			string browser = $"{userAgentInfo.Name} {userAgentInfo.Version}";
 
 			browserSession.OperatingSystem = operatingSystem;
@@ -364,21 +364,21 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			return clientIpAddress;
 		}
 
-		private string TryFindFingerprintClaim(ClaimsIdentity identity) => identity?.FindFirst("fingerprint")?.Value;
+		private string? TryFindFingerprintClaim(ClaimsIdentity? identity) => identity?.FindFirst("fingerprint")?.Value;
 
-		private string TryFindFingerprintClaim()
+		private string? TryFindFingerprintClaim()
 		{
-			string fingerprint = TryFindFingerprintClaim(Thread.CurrentPrincipal.Identity as ClaimsIdentity);
+			string? fingerprint = TryFindFingerprintClaim(Thread.CurrentPrincipal?.Identity as ClaimsIdentity);
 
 			if (fingerprint != null) return fingerprint;
 
 			var context = httpContextAccessor.HttpContext;
 
-			fingerprint = TryFindFingerprintClaim(context.User?.Identity as ClaimsIdentity);
+			fingerprint = TryFindFingerprintClaim(context?.User?.Identity as ClaimsIdentity);
 
 			if (fingerprint != null) return fingerprint;
 
-			if (context.Items.TryGetValue("ValidatedIdentity", out object identityObject))
+			if (context?.Items.TryGetValue("ValidatedIdentity", out object? identityObject) ?? false)
 			{
 				fingerprint = TryFindFingerprintClaim(identityObject as ClaimsIdentity);
 
@@ -388,7 +388,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			return null;
 		}
 
-		private void SetFingerprintClaim(ClaimsIdentity identity, string fingerprint)
+		private void SetFingerprintClaim(ClaimsIdentity? identity, string fingerprint)
 		{
 			if (identity == null) return;
 
@@ -406,13 +406,13 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		{
 			if (fingerprint == null) return;
 
-			SetFingerprintClaim(Thread.CurrentPrincipal.Identity as ClaimsIdentity, fingerprint);
+			SetFingerprintClaim(Thread.CurrentPrincipal?.Identity as ClaimsIdentity, fingerprint);
 
 			var context = httpContextAccessor.HttpContext;
 
-			SetFingerprintClaim(context.User?.Identity as ClaimsIdentity, fingerprint);
+			SetFingerprintClaim(context?.User?.Identity as ClaimsIdentity, fingerprint);
 
-			if (context.Items.TryGetValue("ValidatedIdentity", out object identityObject))
+			if (context?.Items.TryGetValue("ValidatedIdentity", out object? identityObject) ?? false)
 			{
 				SetFingerprintClaim(identityObject as ClaimsIdentity, fingerprint);
 			}

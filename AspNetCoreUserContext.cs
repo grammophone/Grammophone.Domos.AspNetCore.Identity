@@ -32,7 +32,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		{
 			get
 			{
-				string userIdString = httpContextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+				string? userIdString = httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
 
 				if (String.IsNullOrEmpty(userIdString))
 				{

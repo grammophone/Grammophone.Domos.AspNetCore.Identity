@@ -101,52 +101,52 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <summary>
 		/// Fired when a new user is being created.
 		/// </summary>
-		public event NotificationDelegate<UserStore<UB, U, D>, U> CreatingUser;
+		public event NotificationDelegate<UserStore<UB, U, D>, U>? CreatingUser;
 
 		/// <summary>
 		/// Fired when a user is being updated.
 		/// </summary>
-		public event NotificationDelegate<UserStore<UB, U, D>, U> UpdatingUser;
+		public event NotificationDelegate<UserStore<UB, U, D>, U>? UpdatingUser;
 
 		/// <summary>
 		/// Fired when a user is being deleted.
 		/// </summary>
-		public event NotificationDelegate<UserStore<UB, U, D>, U> DeletingUser;
+		public event NotificationDelegate<UserStore<UB, U, D>, U>? DeletingUser;
 
 		/// <summary>
 		/// Fired when an external login is added to a user.
 		/// </summary>
-		public event NotificationDelegate<UserStore<UB, U, D>, Registration> AddingLogin;
+		public event NotificationDelegate<UserStore<UB, U, D>, Registration>? AddingLogin;
 
 		/// <summary>
 		/// Fired when an external login is removed from a user.
 		/// </summary>
-		public event NotificationDelegate<UserStore<UB, U, D>, Registration> RemovingLogin;
+		public event NotificationDelegate<UserStore<UB, U, D>, Registration>? RemovingLogin;
 
 		/// <summary>
 		/// Fired when a user's password is changed.
 		/// </summary>
-		public event NotificationDelegate<UserStore<UB, U, D>, U> ChangingPassword;
+		public event NotificationDelegate<UserStore<UB, U, D>, U>? ChangingPassword;
 
 		/// <summary>
 		/// Fired when a user's e-mail is set.
 		/// </summary>
-		public event NotificationDelegate<UserStore<UB, U, D>, U> SettingEmail;
+		public event NotificationDelegate<UserStore<UB, U, D>, U>? SettingEmail;
 
 		/// <summary>
 		/// Fired when a user's e-mail is verified.
 		/// </summary>
-		public event NotificationDelegate<UserStore<UB, U, D>, U> ConfirmingEmail;
+		public event NotificationDelegate<UserStore<UB, U, D>, U>? ConfirmingEmail;
 
 		/// <summary>
 		/// Fired when the security stamp is read.
 		/// </summary>
-		public event NotificationDelegate<UserStore<UB, U, D>, U> GettingSecurityStamp;
+		public event NotificationDelegate<UserStore<UB, U, D>, U>? GettingSecurityStamp;
 
 		/// <summary>
 		/// Fired when the security stamp is set.
 		/// </summary>
-		public event NotificationDelegate<UserStore<UB, U, D>, U> SettingSecurityStamp;
+		public event NotificationDelegate<UserStore<UB, U, D>, U>? SettingSecurityStamp;
 
 		#endregion
 
@@ -232,7 +232,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// Returns a task whose <see cref="Task{T}.Result"/>
 		/// is the user found or null.
 		/// </returns>
-		public virtual async Task<U> FindByIdAsync(string userID, CancellationToken cancellationToken)
+		public virtual async Task<U?> FindByIdAsync(string userID, CancellationToken cancellationToken)
 		{
 			if (!long.TryParse(userID, out long userIdValue))
 			{
@@ -258,7 +258,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// Returns a task whose <see cref="Task{T}.Result"/>
 		/// is the user found or null.
 		/// </returns>
-		public virtual async Task<U> FindByNameAsync(string userName, CancellationToken cancellationToken)
+		public virtual async Task<U?> FindByNameAsync(string userName, CancellationToken cancellationToken)
 		{
 			if (userName == null) throw new ArgumentNullException(nameof(userName));
 
@@ -315,19 +315,20 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <summary>
 		/// Returns the <see cref="User.UserName"/> property.
 		/// </summary>
-		public virtual Task<string> GetUserNameAsync(U user, CancellationToken cancellationToken)
+		public virtual Task<string?> GetUserNameAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			return Task.FromResult(user.UserName);
+			return Task.FromResult<string?>(user.UserName);
 		}
 
 		/// <summary>
 		/// Sets the <see cref="User.UserName"/> property of the user.
 		/// </summary>
-		public virtual async Task SetUserNameAsync(U user, string userName, CancellationToken cancellationToken)
+		public virtual async Task SetUserNameAsync(U user, string? userName, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
+			if (userName == null) throw new ArgumentNullException(nameof(userName));
 
 			user.UserName = userName;
 
@@ -339,13 +340,13 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <summary>
 		/// Default implementation delegates to <see cref="GetUserNameAsync(U, CancellationToken)"/>.
 		/// </summary>
-		public Task<string> GetNormalizedUserNameAsync(U user, CancellationToken cancellationToken)
+		public Task<string?> GetNormalizedUserNameAsync(U user, CancellationToken cancellationToken)
 			=> GetUserNameAsync(user, cancellationToken);
 
 		/// <summary>
 		/// Default implementation delegates to <see cref="SetUserNameAsync(U, string, CancellationToken)"/>.
 		/// </summary>
-		public Task SetNormalizedUserNameAsync(U user, string normalizedName, CancellationToken cancellationToken)
+		public Task SetNormalizedUserNameAsync(U user, string? normalizedName, CancellationToken cancellationToken)
 		{
 			if (normalizedName == null) throw new ArgumentNullException(nameof(normalizedName));
 
@@ -405,7 +406,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// Returns an task whose <see cref="Task{T}.Result"/> contains the found user
 		/// or null.
 		/// </returns>
-		public virtual async Task<U> FindByLoginAsync(string loginProvider, string providerKey, CancellationToken cancellationToken)
+		public virtual async Task<U?> FindByLoginAsync(string loginProvider, string providerKey, CancellationToken cancellationToken)
 		{
 			if (loginProvider == null) throw new ArgumentNullException(nameof(loginProvider));
 			if (providerKey == null) throw new ArgumentNullException(nameof(providerKey));
@@ -500,7 +501,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// Returns a task whose <see cref="Task{T}.Result"/> will contain the 
 		/// password hash or null.
 		/// </returns>
-		public Task<string> GetPasswordHashAsync(U user, CancellationToken cancellationToken)
+		public Task<string?> GetPasswordHashAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
@@ -508,10 +509,10 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			{
 				case RegistrationStatus.PendingVerification:
 				case RegistrationStatus.Verified:
-					return Task.FromResult(user.PasswordHash);
+					return Task.FromResult<string?>(user.PasswordHash);
 
 				case RegistrationStatus.Revoked:
-					return Task.FromResult<string>(null);
+					return Task.FromResult<string?>(null);
 
 				default:
 					throw new IdentityException("Invalid user RegistrationStatus.");
@@ -541,7 +542,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="passwordHash">The password hash to set.</param>
 		/// <param name="cancellationToken">Ignored; the action is immediate.</param>
 		/// <returns>Returns a task for the operation.</returns>
-		public async Task SetPasswordHashAsync(U user, string passwordHash, CancellationToken cancellationToken)
+		public async Task SetPasswordHashAsync(U user, string? passwordHash, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
@@ -695,7 +696,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// Returns a task whose <see cref="Task{T}.Result"/> contains 
 		/// the user found or null.
 		/// </returns>
-		public virtual async Task<U> FindByEmailAsync(string email, CancellationToken cancellationToken)
+		public virtual async Task<U?> FindByEmailAsync(string email, CancellationToken cancellationToken)
 		{
 			if (email == null) throw new ArgumentNullException(nameof(email));
 
@@ -719,11 +720,11 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// Returns a task whose <see cref="Task{T}.Result"/> contains 
 		/// the user's e-mail.
 		/// </returns>
-		public Task<string> GetEmailAsync(U user, CancellationToken cancellationToken)
+		public Task<string?> GetEmailAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 
-			return Task.FromResult(user.Email);
+			return Task.FromResult<string?>(user.Email);
 		}
 
 		/// <summary>
@@ -749,7 +750,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="email">the user's e-mail.</param>
 		/// <param name="cancellationToken">Cancellation token for the operation.</param>
 		/// <returns>Returns a task which completes the operation.</returns>
-		public virtual async Task SetEmailAsync(U user, string email, CancellationToken cancellationToken)
+		public virtual async Task SetEmailAsync(U user, string? email, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 			if (email == null) throw new ArgumentNullException(nameof(email));
@@ -791,14 +792,14 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// Default implementation delegates to <see cref="GetEmailAsync(U, CancellationToken)"/>.
 		/// Override to change.
 		/// </summary>
-		public virtual Task<string> GetNormalizedEmailAsync(U user, CancellationToken cancellationToken)
+		public virtual Task<string?> GetNormalizedEmailAsync(U user, CancellationToken cancellationToken)
 			=> GetEmailAsync(user, cancellationToken);
 
 		/// <summary>
 		/// Default implementation delegates to <see cref="SetEmailAsync(U, string, CancellationToken)"/>
 		/// Override to change.
 		/// </summary>
-		public virtual Task SetNormalizedEmailAsync(U user, string normalizedEmail, CancellationToken cancellationToken)
+		public virtual Task SetNormalizedEmailAsync(U user, string? normalizedEmail, CancellationToken cancellationToken)
 		{
 			if (normalizedEmail == null) throw new ArgumentNullException(nameof(normalizedEmail));
 
@@ -897,7 +898,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <returns>
 		/// Returns a task whose result contains the user's <see cref="User.SecurityStamp"/>.
 		/// </returns>
-		public virtual async Task<string> GetSecurityStampAsync(U user, CancellationToken cancellationToken)
+		public virtual async Task<string?> GetSecurityStampAsync(U user, CancellationToken cancellationToken)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
 

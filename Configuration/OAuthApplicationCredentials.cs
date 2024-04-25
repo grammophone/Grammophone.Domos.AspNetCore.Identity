@@ -15,11 +15,11 @@ namespace Grammophone.Domos.AspNetCore.Identity.Configuration
 		/// <summary>
 		/// The client or application ID.
 		/// </summary>
-		public string ClientID { get; set; }
+		public required string ClientID { get; set; }
 
 		/// <summary>
 		/// The client or application secret.
 		/// </summary>
-		public string ClientSecret { get; set; }
+		public required string ClientSecret { get; set; }
 	}
 }

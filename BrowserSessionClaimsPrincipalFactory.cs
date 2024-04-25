@@ -62,7 +62,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			{
 				var fingerprintClaim = currentUser.Claims.Where(c => c.Type == "fingerprint").FirstOrDefault();
 
-				string fingerprint = fingerprintClaim?.Value;
+				string? fingerprint = fingerprintClaim?.Value;
 
 				if (fingerprint != null)
 				{
