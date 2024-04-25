@@ -218,6 +218,89 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 		#endregion
 
+		#region Session logoff methods
+
+		/// <summary>
+		/// Log off a browser session.
+		/// </summary>
+		/// <param name="user">The identity user to be logged of.</param>
+		/// <param name="fingerprint">The fingerprint of the session to log off.</param>
+		public async Task LogOffBrowserSessionAsync(U user, string fingerprint)
+		{
+			if (user == null) throw new ArgumentNullException(nameof(user));
+
+			if (string.IsNullOrEmpty(fingerprint)) throw new ArgumentNullException(nameof(fingerprint));
+
+			using (var transaction = this.DomainContainer.BeginTransaction())
+			{
+				var browserSession = await this.DomainContainer.BrowserSessions
+					.Where(bs => bs.FingerPrint == fingerprint && bs.UserID == user.ID && !bs.IsLoggedOff)
+					.FirstOrDefaultAsync();
+
+				if (browserSession == null)
+				{
+					transaction.Pass();
+
+					return;
+				}
+
+				browserSession.IsLoggedOff = true;
+				browserSession.SecurityStamp = Guid.NewGuid().ToString();
+
+				await transaction.CommitAsync();
+			}
+		}
+
+		/// <summary>
+		/// Log off a browser session.
+		/// </summary>
+		/// <param name="sessionID">The ID of the browser session.</param>
+		public async Task LogOffBrowserSessionAsync(long sessionID)
+		{
+			var browserSession = await this.DomainContainer.BrowserSessions.Where(bs => bs.ID == sessionID).FirstOrDefaultAsync();
+
+			if (browserSession.IsLoggedOff) return;
+
+			using (var transaction = this.DomainContainer.BeginTransaction())
+			{
+				browserSession.IsLoggedOff = true;
+				browserSession.SecurityStamp = Guid.NewGuid().ToString();
+
+				await transaction.CommitAsync();
+			}
+		}
+
+		/// <summary>
+		/// Log off a user from all connected devices.
+		/// </summary>
+		/// <param name="user">The user whose sessions to log off.</param>
+		public async Task GlobalLofOffAsync(U user)
+		{
+			if (user == null) throw new ArgumentNullException(nameof(user));
+
+			using (var transaction = this.DomainContainer.BeginTransaction())
+			{
+				var activeBrowserSessions = await this.DomainContainer.BrowserSessions.Where(bs => bs.UserID == user.ID && !bs.IsLoggedOff).ToArrayAsync();
+
+				if (activeBrowserSessions.Length == 0)
+				{
+					transaction.Pass();
+
+					return;
+				}
+
+				foreach (BrowserSession session in activeBrowserSessions)
+				{
+					session.IsLoggedOff = true;
+					session.SecurityStamp = Guid.NewGuid().ToString();
+				}
+
+				await transaction.CommitAsync();
+			}
+		}
+
+		#endregion
+
 		#endregion
 
 		#region Protected methods
