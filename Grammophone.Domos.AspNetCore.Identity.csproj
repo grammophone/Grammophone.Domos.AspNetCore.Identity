@@ -15,7 +15,7 @@
     <DebugType>pdbonly</DebugType>
   </PropertyGroup>
   <ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.1.39" />
 		<PackageReference Include="MyCSharp.HttpUserAgentParser" Version="2.0.2" />
 	</ItemGroup>
   <ItemGroup>
