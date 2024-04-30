@@ -28,7 +28,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 		/// <inheritdoc/>
 		public BrowserSessionSignInManager(
-			BrowserSessionUserManager<UB, U, D> userManager,
+			UserManager<U> userManager,
 			IHttpContextAccessor contextAccessor,
 			IUserClaimsPrincipalFactory<U> claimsFactory,
 			IOptions<IdentityOptions> optionsAccessor,
@@ -36,7 +36,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			IAuthenticationSchemeProvider schemes,
 			IUserConfirmation<U> confirmation) : base(userManager, contextAccessor, claimsFactory, optionsAccessor, logger, schemes, confirmation)
 		{
-			this.UserManager = userManager;
+			this.UserManager = userManager as BrowserSessionUserManager<UB, U, D> ?? throw new IdentityException("The user manager does not derive from BrowserSessionUserManager.");
 		}
 
 		#endregion
@@ -72,7 +72,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 	{
 		/// <inheritdoc/>
 		public BrowserSessionSignInManager(
-			BrowserSessionUserManager<U, U, D> userManager,
+			UserManager<U> userManager,
 			IHttpContextAccessor contextAccessor,
 			IUserClaimsPrincipalFactory<U> claimsFactory,
 			IOptions<IdentityOptions> optionsAccessor, ILogger<SignInManager<U>> logger,
