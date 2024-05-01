@@ -15,7 +15,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 	/// <summary>
 	/// User manager that uses a user store derived from <see cref="BrowserSessionUserStore{UB, U, D}"/>,
 	/// exposes browser session methods and 
-	/// uses <see cref="BrowserSessionClaimsPrincipalFactory{U}"/> to create session fingerprint claims.
+	/// uses <see cref="BrowserSessionClaimsPrincipalFactory{UB, U, D}"/> to create session fingerprint claims.
 	/// </summary>
 	/// <typeparam name="UB">The base type of the user, derived from <see cref="User"/>.</typeparam>
 	/// <typeparam name="U">The type of the user, derived from <typeparamref name="UB"/>.</typeparam>
@@ -57,6 +57,12 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		#endregion
 
 		#region Public methods
+
+		/// <summary>
+		/// Get an existing browser based on the finger print or create a new one.
+		/// </summary>
+		public Task<BrowserSession?> TryGetOrCreateBrowserSessionAsync(U user, string? browserFingerPrint = null)
+			=> this.Store.TryGetOrCreateBrowserSessionAsync(user, browserFingerPrint);
 
 		/// <summary>
 		/// Log off a browser session.
@@ -117,7 +123,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 	/// <summary>
 	/// User manager that uses a user store derived from <see cref="BrowserSessionUserStore{UB, U, D}"/>,
 	/// exposes browser session methods and 
-	/// uses <see cref="BrowserSessionClaimsPrincipalFactory{U}"/> to create session fingerprint claims.
+	/// uses <see cref="BrowserSessionClaimsPrincipalFactory{UB, U, D}"/> to create session fingerprint claims.
 	/// </summary>
 	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
 	/// <typeparam name="D">The type of the domain container, derived from <see cref="IUsersDomainContainer{U}"/>.</typeparam>
