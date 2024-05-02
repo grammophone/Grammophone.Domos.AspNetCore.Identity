@@ -89,7 +89,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 			if (browserSession != null)
 			{
-				//identity.AddClaim(new Claim(Options.ClaimsIdentity.SecurityStampClaimType, browserSession.SecurityStamp));
+				identity.AddClaim(new Claim(Options.ClaimsIdentity.SecurityStampClaimType, browserSession.SecurityStamp));
 				identity.AddClaim(new Claim("fingerprint", browserSession.FingerPrint));
 			}
 

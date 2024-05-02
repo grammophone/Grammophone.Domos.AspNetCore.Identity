@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Identity.Core;
 using Microsoft.Extensions.Options;
+using Grammophone.Domos.DataAccess;
 
 namespace Grammophone.Domos.AspNetCore.Identity
 {
@@ -19,16 +20,14 @@ namespace Grammophone.Domos.AspNetCore.Identity
 	/// A security stamp validator to be used in combination with <see cref="BrowserSessionUserStore{UB, U, D}"/>
 	/// to take into account the user's browser sessions.
 	/// </summary>
-	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
-	public class BrowserSessionSecurityStampValidator<U> : SecurityStampValidator<U>
-		where U : User
+	/// <typeparam name="UB">The base type of the user, derived from <see cref="User"/>.</typeparam>
+	/// <typeparam name="U">The type of the user, derived from <typeparamref name="UB"/>.</typeparam>
+	/// <typeparam name="D">The type of the domain container, derived from <see cref="IUsersDomainContainer{U}"/>.</typeparam>
+	public class BrowserSessionSecurityStampValidator<UB, U, D> : SecurityStampValidator<U>
+		where UB : User
+		where U : UB
+		where D : IUsersDomainContainer<UB>
 	{
-		#region Privat efields
-
-		private readonly IHttpContextAccessor httpContextAccessor;
-
-		#endregion
-
 		#region Construction
 
 		/// <summary>
@@ -37,14 +36,14 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="options">Used to access the <see cref="SecurityStampValidatorOptions"/>.</param>
 		/// <param name="signInManager">The sign-in manager.</param>
 		/// <param name="logger">The logger.</param>
-		/// <param name="httpContextAccessor">The accessor to <see cref="HttpContext"/>.</param>
+		/// <param name="userManager">The user manager.</param>
 		public BrowserSessionSecurityStampValidator(
-			IOptions<SecurityStampValidatorOptions> options, SignInManager<U> signInManager, ILoggerFactory logger, IHttpContextAccessor httpContextAccessor)
+			IOptions<SecurityStampValidatorOptions> options, SignInManager<U> signInManager, ILoggerFactory logger, UserManager<U> userManager)
 			: base(options, signInManager, logger)
 		{
-			if (httpContextAccessor == null) throw new ArgumentNullException(nameof(httpContextAccessor));
+			if (userManager == null) throw new ArgumentNullException(nameof(userManager));
 
-			this.httpContextAccessor = httpContextAccessor;
+			this.UserManager = userManager as BrowserSessionUserManager<UB, U, D> ?? throw new IdentityException("The user manager does not derive from .");
 		}
 
 		/// <summary>
@@ -54,88 +53,113 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="signInManager">The sign-in manager.</param>
 		/// <param name="clock">The system clock.</param>
 		/// <param name="logger">The logger.</param>
-		/// <param name="httpContextAccessor">The accessor to <see cref="HttpContext"/>.</param>
+		/// <param name="userManager">The user manager.</param>
 		[Obsolete]
 		public BrowserSessionSecurityStampValidator(
-			IOptions<SecurityStampValidatorOptions> options, SignInManager<U> signInManager, ISystemClock clock, ILoggerFactory logger, IHttpContextAccessor httpContextAccessor)
+			IOptions<SecurityStampValidatorOptions> options, SignInManager<U> signInManager, ISystemClock clock, ILoggerFactory logger, UserManager<U> userManager)
 			: base(options, signInManager, clock, logger)
 		{
-			if (httpContextAccessor == null) throw new ArgumentNullException(nameof(httpContextAccessor));
+			if (userManager == null) throw new ArgumentNullException(nameof(userManager));
 
-			this.httpContextAccessor = httpContextAccessor;
+			this.UserManager = userManager as BrowserSessionUserManager<UB, U, D> ?? throw new IdentityException("The user manager does not derive from .");
 		}
+
+		#endregion
+
+		#region Public properties
+
+		/// <summary>
+		/// The user manager.
+		/// </summary>
+		public BrowserSessionUserManager<UB, U, D> UserManager { get; }
 
 		#endregion
 
 		#region Protected methods
 
 		/// <summary>
-		/// Set the <paramref name="principal"/> into the current <see cref="HttpContext.Items"/>
-		/// under the key "ValidatedIdentity" before proceeding with standard security stamp validation.
+		/// Find or create the browser session by fingerprint to validate the security stamp.
 		/// </summary>
-		/// <param name="principal">The principal whose security stamp tp validate.</param>
-		/// <returns>Returns the verified user or null if the verification fails.</returns>
 		protected override async Task<U?> VerifySecurityStamp(ClaimsPrincipal? principal)
 		{
-			if (principal?.Identity != null && httpContextAccessor.HttpContext != null)
+			if (principal != null)
 			{
-				httpContextAccessor.HttpContext.Items["ValidatedIdentity"] = principal.Identity;
-			}
+				string? fingerPrint = principal.FindFirstValue("fingerprint");
 
-			return await base.VerifySecurityStamp(principal);
-		}
+				var user = await this.UserManager.GetUserAsync(principal);
 
-		public override async Task ValidateAsync(CookieValidatePrincipalContext context)
-		{
-			bool addedFingerprintClaim = false;
-
-			ClaimsIdentity? claimsIdentity = context.Principal?.Identity as ClaimsIdentity;
-
-			U? user = null;
-
-			if (claimsIdentity != null)
-			{
-				httpContextAccessor.HttpContext?.Items.Add("ValidatedIdentity", claimsIdentity);
-
-				string? fingerprint = claimsIdentity.Claims.FirstOrDefault(c => c.Type == "fingerprint")?.Value;
-
-				if (String.IsNullOrEmpty(fingerprint))
+				if (user != null)
 				{
-					claimsIdentity.AddClaim(new Claim("fingerprint", Guid.NewGuid().ToString()));
+					string? securityStamp = (await this.UserManager.TryGetOrCreateBrowserSessionAsync(user, fingerPrint))?.SecurityStamp;
 
-					addedFingerprintClaim = true;
+					string? securityStampClaim = principal.FindFirstValue("AspNet.Identity.SecurityStamp");
 
-					var userManager = this.SignInManager.UserManager; //context.OwinContext.GetUserManager<US>();
-
-					if (userManager != null)
+					if (securityStamp != null && securityStampClaim == securityStamp)
 					{
-						string? userID = claimsIdentity.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-
-						if (userID != null)
-						{
-							user = await userManager.FindByIdAsync(userID);
-
-							if (user != null)
-							{
-								// If the IUserStore descends from BrowserSessionUserStore, force creating a browser session and adding of the fingerprint claim.
-								await userManager.GetSecurityStampAsync(user);
-							}
-						}
+						return user;
 					}
 				}
 			}
 
-			await base.ValidateAsync(context);
+			return null;
+		}
 
-			if (addedFingerprintClaim && user != null) // If not rejected and added fingerprint, update sign-on.
+		protected override Task SecurityStampVerified(U user, CookieValidatePrincipalContext context)
+		{
+			//do not update principal as I need to pass the fingerprint to the SignInManager.Create....
+			//var newPrincipal = await SignInManager.CreateUserPrincipalAsync(user); //await claimsPrincipalFactory.CreateAsync(user, context.Principal.FindFirstValue("fingerprint"));//await SignInManager.CreateUserPrincipalAsync(user);
+
+			//if (Options.OnRefreshingPrincipal != null)
+			//{
+			//	var replaceContext = new SecurityStampRefreshingPrincipalContext
+			//	{
+			//		CurrentPrincipal = context.Principal,
+			//		NewPrincipal = newPrincipal
+			//	};
+
+			//	// Note: a null principal is allowed and results in a failed authentication.
+			//	await Options.OnRefreshingPrincipal(replaceContext);
+			//	newPrincipal = replaceContext.NewPrincipal;
+			//}
+
+			// REVIEW: note we lost login authentication method
+
+			if (context.Principal != null)
 			{
-				context.ReplacePrincipal(context.Principal!);
+				context.ReplacePrincipal(context.Principal); // newPrincipal);
+				context.ShouldRenew = true;
 
-				//await this.SignInManager.SignInAsync(user, context.Properties);
+				if (!context.Options.SlidingExpiration)
+				{
+					// On renewal calculate the new ticket length relative to now to avoid
+					// extending the expiration.
+					context.Properties.IssuedUtc = TimeProvider.GetUtcNow();
+				}
 			}
 
+			return Task.CompletedTask;
 		}
 
 		#endregion
+	}
+
+	/// <summary>
+	/// A security stamp validator to be used in combination with <see cref="BrowserSessionUserStore{UB, U, D}"/>
+	/// to take into account the user's browser sessions.
+	/// </summary>
+	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
+	/// <typeparam name="D">The type of the domain container, derived from <see cref="IUsersDomainContainer{U}"/>.</typeparam>
+	public class BrowserSessionSecurityStampValidator<U, D> : BrowserSessionSecurityStampValidator<U, U, D>
+		where U : User
+		where D : IUsersDomainContainer<U>
+	{
+		/// <inheritdoc/>
+		public BrowserSessionSecurityStampValidator(
+			IOptions<SecurityStampValidatorOptions> options,
+			SignInManager<U> signInManager,
+			ILoggerFactory logger,
+			UserManager<U> userManager) : base(options, signInManager, logger, userManager)
+		{
+		}
 	}
 }
