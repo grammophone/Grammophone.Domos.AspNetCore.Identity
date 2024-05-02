@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Grammophone.Domos.DataAccess;
@@ -55,6 +56,23 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <inheritdoc/>
 		public override async Task SignOutAsync()
 		{
+			var user = this.Context.User;
+
+			if (user != null)
+			{
+				var identity = user.Identity as ClaimsIdentity;
+
+				if (identity != null)
+				{
+					string? fingerprint = identity.FindFirst("fingerprint")?.Value;
+
+					if (!String.IsNullOrWhiteSpace(fingerprint))
+					{
+						await this.UserManager.LogOffBrowserSessionAsync(identity.Name!, fingerprint);
+					}
+				}
+			}
+
 			await base.SignOutAsync();
 		}
 
