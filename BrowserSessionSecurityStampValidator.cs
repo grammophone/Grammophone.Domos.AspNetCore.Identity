@@ -4,15 +4,13 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using Grammophone.Domos.DataAccess;
 using Grammophone.Domos.Domain;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Identity.Core;
 using Microsoft.Extensions.Options;
-using Grammophone.Domos.DataAccess;
 
 namespace Grammophone.Domos.AspNetCore.Identity
 {
@@ -104,6 +102,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			return null;
 		}
 
+		/// <inheritdoc/>
 		protected override Task SecurityStampVerified(U user, CookieValidatePrincipalContext context)
 		{
 			//do not update principal as I need to pass the fingerprint to the SignInManager.Create....
