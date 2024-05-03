@@ -80,7 +80,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 			if (currentUser != null)
 			{
-				var fingerprintClaim = currentUser.Claims.Where(c => c.Type == "fingerprint").FirstOrDefault();
+				var fingerprintClaim = currentUser.Claims.Where(c => c.Type == IdentityClaimNames.Fingerprint).FirstOrDefault();
 
 				fingerprint = fingerprintClaim?.Value;
 			}
@@ -90,7 +90,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			if (browserSession != null)
 			{
 				identity.AddClaim(new Claim(Options.ClaimsIdentity.SecurityStampClaimType, browserSession.SecurityStamp));
-				identity.AddClaim(new Claim("fingerprint", browserSession.FingerPrint));
+				identity.AddClaim(new Claim(IdentityClaimNames.Fingerprint, browserSession.FingerPrint));
 			}
 
 			return identity;

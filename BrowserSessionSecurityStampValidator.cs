@@ -82,7 +82,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		{
 			if (principal != null)
 			{
-				string? fingerPrint = principal.FindFirstValue("fingerprint");
+				string? fingerPrint = principal.FindFirstValue(IdentityClaimNames.Fingerprint);
 
 				var user = await this.UserManager.GetUserAsync(principal);
 
@@ -106,7 +106,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		protected override Task SecurityStampVerified(U user, CookieValidatePrincipalContext context)
 		{
 			//do not update principal as I need to pass the fingerprint to the SignInManager.Create....
-			//var newPrincipal = await SignInManager.CreateUserPrincipalAsync(user); //await claimsPrincipalFactory.CreateAsync(user, context.Principal.FindFirstValue("fingerprint"));//await SignInManager.CreateUserPrincipalAsync(user);
+			//var newPrincipal = await SignInManager.CreateUserPrincipalAsync(user); //await claimsPrincipalFactory.CreateAsync(user, context.Principal.FindFirstValue(IdentityClaimNames.Fingerprint));//await SignInManager.CreateUserPrincipalAsync(user);
 
 			//if (Options.OnRefreshingPrincipal != null)
 			//{

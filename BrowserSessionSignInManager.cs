@@ -64,7 +64,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 				if (identity != null)
 				{
-					string? fingerprint = identity.FindFirst("fingerprint")?.Value;
+					string? fingerprint = identity.FindFirst(IdentityClaimNames.Fingerprint)?.Value;
 
 					if (!String.IsNullOrWhiteSpace(fingerprint))
 					{

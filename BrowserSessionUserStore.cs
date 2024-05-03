@@ -364,7 +364,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			return clientIpAddress;
 		}
 
-		private string? TryFindFingerprintClaim(ClaimsIdentity? identity) => identity?.FindFirst("fingerprint")?.Value;
+		private string? TryFindFingerprintClaim(ClaimsIdentity? identity) => identity?.FindFirst(IdentityClaimNames.Fingerprint)?.Value;
 
 		private string? TryFindFingerprintClaim()
 		{
@@ -392,14 +392,14 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		{
 			if (identity == null) return;
 
-			var existingClaims = identity.Claims.Where(c => c.Type == "fingerprint").ToArray();
+			var existingClaims = identity.Claims.Where(c => c.Type == IdentityClaimNames.Fingerprint).ToArray();
 
 			foreach (var existingClaim in existingClaims)
 			{
 				identity.RemoveClaim(existingClaim);
 			}
 
-			identity.AddClaim(new Claim("fingerprint", fingerprint));
+			identity.AddClaim(new Claim(IdentityClaimNames.Fingerprint, fingerprint));
 		}
 
 		private void SetFingerprintClaim(string fingerprint)
