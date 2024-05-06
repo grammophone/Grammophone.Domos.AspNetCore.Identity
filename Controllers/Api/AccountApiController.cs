@@ -452,11 +452,6 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 		protected virtual Task On2faLoginSucceededAsync(U user) => Task.CompletedTask;
 
 		/// <summary>
-		/// Called when the validation of the user timed out.
-		/// </summary>
-		protected virtual Task OnUserValidationExpiredAsync(U user) => Task.CompletedTask;
-
-		/// <summary>
 		/// Called when the verification of the user failed.
 		/// </summary>
 		protected virtual Task OnUserVerificationFailedAsync(U user) => Task.CompletedTask;
