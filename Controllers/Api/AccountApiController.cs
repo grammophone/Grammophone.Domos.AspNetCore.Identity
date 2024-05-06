@@ -34,8 +34,11 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 	}
 
 	/// <summary>
-	/// An api controller of signin users with Authn.
+	/// An API controller for signing in users with WebAuthn.
 	/// </summary>
+	/// <typeparam name="UB">The base type of the user, derived from <see cref="User"/>.</typeparam>
+	/// <typeparam name="U">The type of the user, derived from <typeparamref name="UB"/>.</typeparam>
+	/// <typeparam name="D">The type of the domain container, derived from <see cref="IUsersDomainContainer{U}"/>.</typeparam>
 	[ApiController]
 	[ApiExplorerSettings(IgnoreApi = true)]
 	public class AccountApiController<UB, U, D> : Controller
@@ -475,6 +478,31 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 		private static string FormatException(Exception e)
 		{
 			return string.Format("{0}{1}", e.Message, e.InnerException != null ? " (" + e.InnerException.Message + ")" : "");
+		}
+
+		#endregion
+	}
+
+	/// <summary>
+	/// An API controller for signing in users with WebAuthn.
+	/// </summary>
+	/// <typeparam name="U">The type of the user, derived from <see cref="User"/>.</typeparam>
+	/// <typeparam name="D">The type of the domain container, derived from <see cref="IUsersDomainContainer{U}"/>.</typeparam>
+	public class AccountApiController<U, D> : AccountApiController<U, U, D>
+		where U : User
+		where D : IUsersDomainContainer<U>
+	{
+		#region Construction
+
+		/// <inheritdoc/>
+		public AccountApiController(
+			SignInManager<U> signInManager,
+			UserManager<U> userManager,
+			WebAuthnCredentialsStore<U, U, D> webAuthnCredentialsStore,
+			IOptions<Fido2Configuration> optionsFido2Configuration,
+			IEncryptedCookieManager encrypteCookieManager)
+			: base(signInManager, userManager, webAuthnCredentialsStore, optionsFido2Configuration, encrypteCookieManager)
+		{
 		}
 
 		#endregion

@@ -79,6 +79,11 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 		#region Encryption/Decription methods
 
+		/// <summary>
+		/// Encrypt a string.
+		/// </summary>
+		/// <param name="plainText">The string to be encrypted.</param>
+		/// <returns>Returns the byte array of the encrypted string.</returns>
 		private byte[] EncryptString(string plainText)
 		{
 			if (plainText == null) throw new ArgumentNullException(nameof(plainText));
