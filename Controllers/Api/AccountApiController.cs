@@ -498,7 +498,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 		public AccountApiController(
 			SignInManager<U> signInManager,
 			UserManager<U> userManager,
-			WebAuthnCredentialsStore<U, U, D> webAuthnCredentialsStore,
+			WebAuthnCredentialsStore<U, D> webAuthnCredentialsStore,
 			IOptions<Fido2Configuration> optionsFido2Configuration,
 			IEncryptedCookieManager encrypteCookieManager)
 			: base(signInManager, userManager, webAuthnCredentialsStore, optionsFido2Configuration, encrypteCookieManager)
