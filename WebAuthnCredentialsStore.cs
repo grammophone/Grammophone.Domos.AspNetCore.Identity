@@ -22,7 +22,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 	public class WebAuthnCredentialsStore<UB, U, D>
 		where UB : User
 		where U : UB
-		where D : IUsersDomainContainer<U>
+		where D : IUsersDomainContainer<UB>
 	{
 		#region Construction
 
@@ -162,7 +162,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// </summary>
 		/// <param name="id">The byte encoded user id.</param>
 		/// <returns></returns>
-		public async Task<WebAuthnCredential> GetCredentialByIdAsync(byte[] id)
+		public async Task<WebAuthnCredential> TryGetCredentialByIdAsync(byte[] id)
 		{
 			var cred = await this.DomainContainer.WebAuthnCredentials
 					.Where(c => c.CredentialId == id)
@@ -304,7 +304,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// </summary>
 		/// <param name="userName"></param>
 		/// <returns></returns>
-		public static byte[] GetUserNameInBytes(string userName)
+		public byte[] GetUserNameInBytes(string userName)
 			=> userName != null ? Encoding.UTF8.GetBytes(userName) : throw new ArgumentNullException(nameof(userName));
 
 		/// <summary>
