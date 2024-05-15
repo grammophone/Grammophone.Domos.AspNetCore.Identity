@@ -46,6 +46,12 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 			where U : UB
 			where D : IUsersDomainContainer<UB>
 	{
+		#region Private Readonly
+
+		private readonly string cookieDomain = System.Configuration.ConfigurationManager.AppSettings["domain"]?.ToLower() ?? ".lifeaccount.ca";
+
+		#endregion
+
 		#region Private fields
 
 		private readonly IFido2 fido2Library;
@@ -80,7 +86,8 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 			{
 				ServerDomain = optionsFido2Configuration.Value.ServerDomain,
 				ServerName = optionsFido2Configuration.Value.ServerName,
-				Origin = optionsFido2Configuration.Value.Origin,
+				//Origin = originHashset.(), //optionsFido2Configuration.Value.Origin,
+				Origins = optionsFido2Configuration.Value.Origins,
 				TimestampDriftTolerance = optionsFido2Configuration.Value.TimestampDriftTolerance
 			});
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -147,7 +154,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 					//var cookie = new ("fido2.assertionOptions", Convert.ToBase64String(encryptedOptions));
 					var fido2CookieOptions = new CookieOptions();
 					fido2CookieOptions.Expires = DateTimeOffset.Now.AddMinutes(4);
-					fido2CookieOptions.Domain = ".lifeaccount.ca";
+					fido2CookieOptions.Domain = cookieDomain;
 					fido2CookieOptions.Path = "/";
 					fido2CookieOptions.IsEssential = true;
 					Response.Cookies.Append("fido2.assertionOptions", Convert.ToBase64String(encryptedOptions), fido2CookieOptions);
@@ -157,7 +164,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 					returnUrlCookieOptions.Expires = DateTimeOffset.Now.AddMinutes(4);
 
 					//var returnUrlCookie = new Microsoft.Net.Http.Headers.CookieHeaderValue("returnUrl", request.returnUrl);
-					returnUrlCookieOptions.Domain = ".lifeaccount.ca";//Request.Host!.Value;
+					returnUrlCookieOptions.Domain = cookieDomain;
 					returnUrlCookieOptions.Path = "/";
 					Response.Cookies.Append("returnUrl", request.returnUrl, returnUrlCookieOptions);
 
@@ -309,7 +316,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 					//var cookie = new CookieHeaderValue("fido2.assertionOptionsMFA", Convert.ToBase64String(encryptedOptions));
 					cookieOptions.Expires = DateTimeOffset.Now.AddMinutes(1); //should take it from configuration
-					cookieOptions.Domain = ".lifeaccount.ca";
+					cookieOptions.Domain = cookieDomain;
 					cookieOptions.Path = "/";
 					Response.Cookies.Append("fido2.assertionOptionsMFA", Convert.ToBase64String(encryptedOptions), cookieOptions);
 					//var response = this.Request.CreateResponse<AssertionOptions>(options);
