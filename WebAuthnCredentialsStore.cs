@@ -222,7 +222,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="attestationVerificationSuccess">The attestation verification success.</param>
 		/// <param name="actionPerformingUserID">The id of the user performing the credential add.</param>
 		/// <param name="platformType">The platform type of the authenticator that holds the key.</param>
-		public async Task AddCredentialToUserAsync(long userID, Fido2User user, AttestationVerificationSuccess attestationVerificationSuccess, long actionPerformingUserID, AuthenticatorPlatformType platformType)
+		public async Task AddCredentialToUserAsync(long userID, Fido2User user, RegisteredPublicKeyCredential attestationVerificationSuccess, long actionPerformingUserID, AuthenticatorPlatformType platformType)
 		{
 			if (attestationVerificationSuccess == null) throw new ArgumentNullException(nameof(attestationVerificationSuccess));
 
@@ -253,16 +253,16 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			{
 				CredentialFriendlyName = friendlyName,
 				UserName = user.Name,
-				DescriptorJson = JsonSerializer.Serialize(new PublicKeyCredentialDescriptor(attestationVerificationSuccess.CredentialId)), //JsonConvert.SerializeObject(new PublicKeyCredentialDescriptor(attestationVerificationSuccess.CredentialId)),
+				DescriptorJson = JsonSerializer.Serialize(new PublicKeyCredentialDescriptor(attestationVerificationSuccess.Id)), //JsonConvert.SerializeObject(new PublicKeyCredentialDescriptor(attestationVerificationSuccess.CredentialId)),
 				PublicKey = attestationVerificationSuccess.PublicKey,
 				UserHandle = user.Id,
-				SignatureCounter = attestationVerificationSuccess.Counter,
-				CredType = attestationVerificationSuccess.CredType,
+				SignatureCounter = attestationVerificationSuccess.SignCount,
+				CredType = attestationVerificationSuccess.Type.ToString(),// .CredType,
 				OwnerID = userID,
 				RegistrationDate = DateTime.UtcNow,
-				AaGuid = attestationVerificationSuccess.Aaguid,
+				AaGuid = attestationVerificationSuccess.AaGuid, //.Aaguid,
 				PlatformType = platformType,
-				CredentialId = attestationVerificationSuccess.CredentialId,
+				CredentialId = attestationVerificationSuccess.Id, //.CredentialId,
 				UserId = GetUserNameInBytes(user.Name)
 			};
 

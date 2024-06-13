@@ -134,7 +134,8 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 					// 3. Create options
 					var authenticatorSelection = new AuthenticatorSelection
 					{
-						RequireResidentKey = requireResidentKey,
+						//RequireResidentKey = requireResidentKey,
+						ResidentKey = ResidentKeyRequirement.Required,
 						UserVerification = userVerification.ToEnum<UserVerificationRequirement>()
 					};
 
@@ -145,6 +146,8 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 					{
 						Extensions = true,
 						UserVerificationMethod = true,
+						DevicePubKey = new AuthenticationExtensionsDevicePublicKeyInputs() { Attestation = attType },
+						CredProps = true
 					};
 
 					var options = fido2Library.RequestNewCredential(
@@ -169,10 +172,10 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 				}
 				catch (Exception e)
 				{
-					return Json(new AssertionVerificationResult { Status = "error", ErrorMessage = FormatException(e) });
+					return Json(new VerifyAssertionResult { Status = "error", ErrorMessage = FormatException(e) });
 				}
 			}
-			return Json(new AssertionOptions { Status = "error", ErrorMessage = "WebAuthn is not available." });
+			return Json(new VerifyAssertionResult { Status = "error", ErrorMessage = "WebAuthn is not available." });
 		}
 
 		/// <summary>
@@ -192,7 +195,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 				if (cookieOptions.IsNullOrEmpty())
 				{
-					return Json(new Fido2.CredentialMakeResult("error", "fido2.assertOptions is empty.", null));// CredentialMakeResult { Status = "error", ErrorMessage = "fido2.assertOptions is empty." });
+					return Json(new MakeNewCredentialResult("error", "fido2.assertOptions is empty.", null));// CredentialMakeResult { Status = "error", ErrorMessage = "fido2.assertOptions is empty." });
 				}
 			
 				var options = CredentialCreateOptions.FromJson(this.EncryptedCookieManager.DecryptAndValidateEncryptedToken(Convert.FromBase64String(cookieOptions)));
@@ -201,7 +204,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 				var user = await UserManager.FindByNameAsync(this.User.Identity.Name);
 				if (user == null)
 				{
-					return Json(new Fido2.CredentialMakeResult(
+					return Json(new MakeNewCredentialResult(
 						status:"error",
 						errorMessage: $"Unable to load user with username: '{options.User.Name}'.",
 						result: null
@@ -258,7 +261,11 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 					}
 
 					// 3. Store the credentials in db
-					await WebAuthnCredentialsStore.AddCredentialToUserAsync(user.ID, options.User, success.Result, user.ID ,platformType);
+					await WebAuthnCredentialsStore.AddCredentialToUserAsync(
+						user.ID, options.User, 
+						success.Result, 
+						user.ID ,
+						platformType);
 				}
 
 				//can the action when registration succeeds, (e.g. log).
@@ -270,7 +277,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 			{
 				
 				
-				return Json(new Fido2.CredentialMakeResult(
+				return Json(new MakeNewCredentialResult(
 					status: "error",
 					errorMessage: FormatException(e),
 					result: null

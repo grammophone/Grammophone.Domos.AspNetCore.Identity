@@ -115,7 +115,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 				try
 				{
-					var descriptors = Enumerable.Empty<PublicKeyCredentialDescriptor>();
+					var existingCredentials = new List<PublicKeyCredentialDescriptor>();
 
 					if (!string.IsNullOrEmpty(username))
 					{
@@ -132,7 +132,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 						if (user == null) throw new ArgumentException("Username was not registered");
 
 						// 2. Get registered credentials from database
-						descriptors = await this.WebAuthnCredentialsStore.GetDescriptorsByLogicUserNameAsync(identityUser.UserName);
+						existingCredentials = (await this.WebAuthnCredentialsStore.GetDescriptorsByLogicUserNameAsync(identityUser.UserName)).ToList();
 					}
 
 					var exts = new AuthenticationExtensionsClientInputs
@@ -143,7 +143,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 					// 3. Create options
 					var uv = string.IsNullOrEmpty(userVerification) ? UserVerificationRequirement.Discouraged : userVerification.ToEnum<UserVerificationRequirement>();
 					var options = this.fido2Library.GetAssertionOptions(
-							descriptors,
+							existingCredentials,
 							uv,
 							exts
 					);
@@ -175,7 +175,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 				catch (Exception e)
 				{
-					return Json(new AssertionVerificationResult { Status = "error", ErrorMessage = FormatException(e) });
+					return Json(new AssertionOptions { Status = "error", ErrorMessage = FormatException(e) });
 				}
 			}
 			else
@@ -201,7 +201,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 				var cookieOptions = Request.Cookies["fido2.assertionOptions"]!;
 				if (cookieOptions.IsNullOrEmpty())
 				{
-					return Json(new AssertionVerificationResult { Status = "error", ErrorMessage = "fido2.assertOptions is empty." });
+					return Json(new VerifyAssertionResult { Status = "error", ErrorMessage = "fido2.assertOptions is empty." });
 				}
 
 				var options = AssertionOptions.FromJson(this.EncryptedCookieManager.DecryptAndValidateEncryptedToken(Convert.FromBase64String(cookieOptions))); //SignInManager.DecryptAndValidateEncryptedToken(Convert.FromBase64String(cookieOptions))); ;
@@ -224,10 +224,13 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 				// 4. Make the assertion
 				var res = await this.fido2Library.MakeAssertionAsync(
-						clientResponse, options, creds.PublicKey, storedCounter, IsUserHandleOwnerOfCredentialIdAsync);
+						clientResponse, 
+						options, creds.PublicKey, null
+						,storedCounter, IsUserHandleOwnerOfCredentialIdAsync);
 
 				// 5. Store the updated counter
-				await this.WebAuthnCredentialsStore.UpdateCounterAsync(res.CredentialId, res.Counter);
+				await this.WebAuthnCredentialsStore.UpdateCounterAsync(
+					res.CredentialId, res.SignCount);
 
 				var identityUser = await UserManager.FindByIdAsync(creds.OwnerID.ToString());
 
@@ -246,11 +249,11 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 			{
 				if (e.Message.Contains("Security Timestamp has expired"))
 				{
-					return Json(new AssertionVerificationResult { Status = "error", ErrorMessage = "You login session expired. You did not manage to provide your passkey or your security key in the given time (30 sec). Please try again." });
+					return Json(new VerifyAssertionResult { Status = "error", ErrorMessage = "You login session expired. You did not manage to provide your passkey or your security key in the given time (30 sec). Please try again." });
 				}
 				else
 				{
-					return Json(new AssertionVerificationResult { Status = "error", ErrorMessage = "We couldn't verify you or the key you used. If you are using a security key, make sure this is your key and try again." });
+					return Json(new VerifyAssertionResult { Status = "error", ErrorMessage = "We couldn't verify you or the key you used. If you are using a security key, make sure this is your key and try again." });
 				}
 			}
 		}
@@ -278,7 +281,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 						return Json(new AssertionOptions { Status = "sessionExpired", ErrorMessage = "Security Session Expired due to inactivity." });
 					}
 
-					var existingDescriptors = Enumerable.Empty<PublicKeyCredentialDescriptor>();
+					var existingCredentials = new List<PublicKeyCredentialDescriptor>();
 
 					if (!string.IsNullOrEmpty(identityUser.UserName))
 					{
@@ -292,7 +295,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 						if (user == null) throw new ArgumentException("User is not registered");
 
 						// 2. Get registered credentials from database
-						existingDescriptors = await this.WebAuthnCredentialsStore.GetDescriptorsByLogicUserNameAsync(identityUser.UserName);
+						existingCredentials = (await this.WebAuthnCredentialsStore.GetDescriptorsByLogicUserNameAsync(identityUser.UserName)).ToList();
 					}
 
 					var exts = new AuthenticationExtensionsClientInputs
@@ -303,7 +306,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 					// 3. Create options
 					var uv = string.IsNullOrEmpty(request.userVerification) ? UserVerificationRequirement.Discouraged : request.userVerification.ToEnum<UserVerificationRequirement>();
 					var options = this.fido2Library.GetAssertionOptions(
-							existingDescriptors,
+							existingCredentials,
 							uv,
 							exts
 					);
@@ -386,10 +389,10 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 				// 4. Make the assertion
 				var res = await this.fido2Library.MakeAssertionAsync(
-						clientResponse, options, creds.PublicKey, storedCounter, IsUserHandleOwnerOfCredentialIdAsync);
+						clientResponse, options, creds.PublicKey,null ,storedCounter, IsUserHandleOwnerOfCredentialIdAsync);
 
 				// 6. Store the updated counter
-				await this.WebAuthnCredentialsStore.UpdateCounterAsync(res.CredentialId, res.Counter);
+				await this.WebAuthnCredentialsStore.UpdateCounterAsync(res.CredentialId, res.SignCount);
 
 				//complete sign-in
 				var identityUser = await UserManager.FindByIdAsync(creds.OwnerID.ToString());
@@ -414,7 +417,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 			}
 			catch (Exception e)
 			{
-				return Json(new AssertionVerificationResult { Status = "error", ErrorMessage = FormatException(e) });
+				return Json(new VerifyAssertionResult { Status = "error", ErrorMessage = FormatException(e) });
 			}
 		}
 
