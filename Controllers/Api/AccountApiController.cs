@@ -258,14 +258,15 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 			}
 		}
 
-		#endregion
+    #endregion
 
-		#region mfa
+    #region mfa
 
-		/// <summary>
-		/// Get Assertation options for Mfa with WebAuthn.
-		/// </summary>
-		[HttpPost]
+    /// <summary>
+    /// Get Assertation options for Mfa with WebAuthn.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpPost]
 		[Route("AssertionMFAOptionsPost")]
 		//[ValidateAntiForgeryToken]
 		public async Task<JsonResult> AssertionMFAOptionsPost(AssertOptionsRequest request)
