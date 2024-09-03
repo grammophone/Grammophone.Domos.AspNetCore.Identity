@@ -20,15 +20,17 @@ using MyCSharp.HttpUserAgentParser;
 
 namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 	public class CredRequest
 	{
-		public string username { get; set; }
-		public string displayName { get; set; }
-		public string attType { get; set; }
-		public string authType { get; set; }
+		public string username { get; set; } = String.Empty;
+		public string displayName { get; set; } = String.Empty;
+		public string attType { get; set; } = String.Empty;
+		public string authType { get; set; } = String.Empty;
 		public bool requireResidentKey { get; set; }
-		public string userVerification { get; set; }
+		public string userVerification { get; set; } = String.Empty;
 	}
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 	/// <summary>
 	/// An API controller for managing the user identity.
@@ -103,7 +105,9 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 			if (System.Configuration.ConfigurationManager.AppSettings["enableWebAuthn"]?.ToLower() == "true")
 			{
 				//find lifeaccount user.
-				var user = await UserManager.FindByNameAsync(request.username);
+				var user = await this.UserManager.FindByNameAsync(request.username);
+
+				if (user == null) throw new InvalidOperationException($"The user '{request.username}' was not found.");
 
 				var username = user.UserName; //the actual user name keep as userid.
 				var userHandle = user.Guid.ToString();
@@ -201,7 +205,8 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 				var options = CredentialCreateOptions.FromJson(this.EncryptedCookieManager.DecryptAndValidateEncryptedToken(Convert.FromBase64String(cookieOptions)));
 
 				// 1b. find User
-				var user = await UserManager.FindByNameAsync(this.User.Identity.Name);
+				var user = await UserManager.FindByNameAsync(this.User?.Identity?.Name ?? String.Empty);
+
 				if (user == null)
 				{
 					return Json(new MakeNewCredentialResult(

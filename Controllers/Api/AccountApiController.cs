@@ -225,8 +225,9 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 				// 4. Make the assertion
 				var res = await this.fido2Library.MakeAssertionAsync(
 						clientResponse, 
-						options, creds.PublicKey, null
-						,storedCounter, IsUserHandleOwnerOfCredentialIdAsync);
+						options, creds.PublicKey,
+						Array.Empty<byte[]>(),
+						storedCounter, IsUserHandleOwnerOfCredentialIdAsync);
 
 				// 5. Store the updated counter
 				await this.WebAuthnCredentialsStore.UpdateCounterAsync(
@@ -390,7 +391,12 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 				// 4. Make the assertion
 				var res = await this.fido2Library.MakeAssertionAsync(
-						clientResponse, options, creds.PublicKey,null ,storedCounter, IsUserHandleOwnerOfCredentialIdAsync);
+					clientResponse,
+					options,
+					creds.PublicKey,
+					Array.Empty<byte[]>(),
+					storedCounter,
+					IsUserHandleOwnerOfCredentialIdAsync);
 
 				// 6. Store the updated counter
 				await this.WebAuthnCredentialsStore.UpdateCounterAsync(res.CredentialId, res.SignCount);
