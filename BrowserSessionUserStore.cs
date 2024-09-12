@@ -351,9 +351,9 @@ namespace Grammophone.Domos.AspNetCore.Identity
 				var cache = this.Settings.Resolve<IPLocation.Caching.LocationCache>();
 				var location = await cache.GetLocationAsync(ipadr);
 
-				clientIpAddress.City = location.City.Name;
-				clientIpAddress.Region = location.LastSubdivision.Name;
-				clientIpAddress.Country = location.Country.Name;
+				clientIpAddress.City = location.City?.Name;
+				clientIpAddress.Region = location.LastSubdivision?.Name;
+				clientIpAddress.Country = location.Country?.Name;
 				clientIpAddress.RawIpServiceData = location.Response;
 			}
 			catch (Exception ex)
