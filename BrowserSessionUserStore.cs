@@ -94,22 +94,23 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="cancellationToken">The cancellation token.</param>
 		public override async Task SetSecurityStampAsync(U user, string stamp, CancellationToken cancellationToken)
 		{
-			string? fingerprint = TryFindFingerprintClaim();
-
-			var browserSession = await TryGetOrCreateBrowserSessionAsync(user, fingerprint);
-
-			if (browserSession != null)
+			using (var transaction = this.DomainContainer.BeginTransaction())
 			{
-				browserSession.SecurityStamp = stamp;
+				string? fingerprint = TryFindFingerprintClaim();
 
-				await OnSettingSecurityStampAsync(user);
+				var browserSession = await TryGetOrCreateBrowserSessionAsync(user, fingerprint);
 
-				await this.DomainContainer.SaveChangesAsync();
+				if (browserSession != null)
+				{
+					browserSession.SecurityStamp = stamp;
 
-				return;
+					await OnSettingSecurityStampAsync(user);
+				}
+
+				await base.SetSecurityStampAsync(user, stamp, cancellationToken);
+
+				await transaction.CommitAsync();
 			}
-
-			await base.SetSecurityStampAsync(user, stamp, cancellationToken);
 		}
 
 		#endregion
@@ -124,6 +125,8 @@ namespace Grammophone.Domos.AspNetCore.Identity
 						string? browserFingerPrint = null)
 		{
 			if (user == null) throw new ArgumentNullException(nameof(user));
+
+			if (user.ID == 0L) return null;
 
 			BrowserSession? browserSession = null;
 			ClientIpAddress? clientIpAddress = null;
