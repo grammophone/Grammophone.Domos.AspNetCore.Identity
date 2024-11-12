@@ -134,8 +134,6 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			var context = httpContextAccessor.HttpContext;
 
 			// Get client info
-			string? userAgentString = context?.Request.Headers.UserAgent.FirstOrDefault();
-
 			string? ipAddress = context?.Connection?.RemoteIpAddress?.ToString();
 
 			if (browserFingerPrint != null)
@@ -162,9 +160,20 @@ namespace Grammophone.Domos.AspNetCore.Identity
 					browserSession = this.DomainContainer.BrowserSessions.Create();
 					this.DomainContainer.BrowserSessions.Add(browserSession);
 
-					if (userAgentString != null)
+					var headers = context?.Request?.Headers;
+
+					if (headers != null)
 					{
-						await ParseUserAgentAsync(userAgentString, browserSession);
+						await DetectSessionDeviceAsync(headers, browserSession);
+
+						string? userAgentString = headers["User-Agent"];
+
+						if (userAgentString != null)
+						{
+#pragma warning disable CS0618 // Type or member is obsolete
+							await ParseUserAgentAsync(userAgentString, browserSession);
+#pragma warning restore CS0618 // Type or member is obsolete
+						}
 					}
 
 					if (!string.IsNullOrEmpty(ipAddress))
