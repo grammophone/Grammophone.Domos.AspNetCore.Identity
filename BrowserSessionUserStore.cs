@@ -314,18 +314,45 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// </summary>
 		/// <param name="userAgent">The value of the 'User-Agent' header.</param>
 		/// <param name="browserSession">The browser session to update.</param>
-		protected virtual Task ParseUserAgentAsync(string userAgent, BrowserSession browserSession)
+		[Obsolete("Override DetectSessionDeviceAsync instead.")]
+		protected virtual Task ParseUserAgentAsync(string userAgent, BrowserSession browserSession) => Task.CompletedTask;
+
+		/// <summary>
+		/// Examine the HTTP response headers and to fill in the device information of the browser session.
+		/// </summary>
+		/// <param name="headers">The response HTTP headers.</param>
+		/// <param name="browserSession">The browser session to fill.</param>
+		protected virtual Task DetectSessionDeviceAsync(IHeaderDictionary headers, BrowserSession browserSession)
 		{
-			if (userAgent == null) throw new ArgumentNullException(nameof(userAgent));
+			if (headers == null) throw new ArgumentNullException(nameof(headers));
 			if (browserSession == null) throw new ArgumentNullException(nameof(browserSession));
 
-			var userAgentInfo = HttpUserAgentParser.Parse(userAgent);
+			string? userAgent = headers.UserAgent;
 
-			string? operatingSystem = userAgentInfo.Platform.HasValue ? userAgentInfo.Platform.Value.Name : null;
-			string browser = $"{userAgentInfo.Name} {userAgentInfo.Version}";
+			if (userAgent != null)
+			{
+				var userAgentInfo = HttpUserAgentParser.Parse(userAgent);
 
-			browserSession.OperatingSystem = operatingSystem;
-			browserSession.Browser = browser;
+				string? operatingSystem = userAgentInfo.Platform.HasValue ? userAgentInfo.Platform.Value.Name : null;
+				string browser = $"{userAgentInfo.Name} {userAgentInfo.Version}";
+
+				browserSession.OperatingSystem = operatingSystem;
+				browserSession.Browser = browser;
+			}
+
+			string? platform = headers["Sec-CH-UA-Platform"];
+
+			if (platform != null)
+			{
+				browserSession.OperatingSystem = platform;
+
+				string? version = headers["Sec-CH-UA-Platform-Version"];
+
+				if (version != null)
+				{
+					browserSession.OperatingSystem = $"{platform} {version}";
+				}
+			}
 
 			return Task.CompletedTask;
 		}
