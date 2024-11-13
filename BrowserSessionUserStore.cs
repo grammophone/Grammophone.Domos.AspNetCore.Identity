@@ -166,7 +166,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 					{
 						await DetectSessionDeviceAsync(headers, browserSession);
 
-						string? userAgentString = headers["User-Agent"];
+						string? userAgentString = headers.UserAgent;
 
 						if (userAgentString != null)
 						{
@@ -353,13 +353,13 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 			if (platform != null)
 			{
-				browserSession.OperatingSystem = platform;
+				browserSession.OperatingSystem = platform.Trim('"', ' ');
 
 				string? version = headers["Sec-CH-UA-Platform-Version"];
 
 				if (version != null)
 				{
-					browserSession.OperatingSystem = $"{platform} {version}";
+					browserSession.OperatingSystem = $"{platform.Trim('"', ' ')} {version.Trim('"', ' ')}";
 				}
 			}
 
