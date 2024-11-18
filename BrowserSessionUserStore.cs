@@ -353,13 +353,41 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 			if (platform != null)
 			{
-				browserSession.OperatingSystem = platform.Trim('"', ' ');
+				platform = platform.Trim('"', ' ');
 
 				string? version = headers["Sec-CH-UA-Platform-Version"];
 
 				if (version != null)
 				{
-					browserSession.OperatingSystem = $"{platform.Trim('"', ' ')} {version.Trim('"', ' ')}";
+					version = version.Trim('"', ' ');
+
+					string commercialVersion = version;
+
+					int majorVersionIndex = version.IndexOf('.');
+
+					if (majorVersionIndex > 0)
+					{
+						if (String.Compare(platform, "Windows", ignoreCase: true) == 0)
+						{
+							string versionPrefix = version.Substring(0, version.IndexOf('.'));
+
+							if (Int32.TryParse(versionPrefix, out int majorVersionNumber))
+							{
+								commercialVersion = majorVersionNumber switch
+								{
+									> 0 and < 13 => "10",
+									>= 13 => "11",
+									_ => String.Empty
+								};
+							}
+
+						}
+					}
+
+					if (commercialVersion != String.Empty)
+					{
+						browserSession.OperatingSystem = $"{platform} {commercialVersion}";
+					}
 				}
 			}
 
