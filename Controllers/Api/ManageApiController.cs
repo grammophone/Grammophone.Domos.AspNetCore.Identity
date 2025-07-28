@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-using Fido2NetLib.Objects;
 using Fido2NetLib;
+using Fido2NetLib.Objects;
+using Grammophone.Domos.DataAccess;
 using Grammophone.Domos.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Net.Http.Headers;
-using Grammophone.Domos.DataAccess;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using System.Threading;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 using MyCSharp.HttpUserAgentParser;
 
 namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
@@ -230,12 +231,24 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 				if (success.Result != null)
 				{
 					//2.1 find the user agent.
-					var useragentInfo = HttpUserAgentParser.Parse(this.Request.Headers.UserAgent.ToString());
+					string userAgentHeader = this.Request?.Headers?.UserAgent.ToString() ?? String.Empty;
+
+					HttpUserAgentInformation userAgentInfo = new HttpUserAgentInformation();
+
+					try
+					{
+						userAgentInfo = HttpUserAgentParser.Parse(userAgentHeader);
+					}
+					catch (Exception ex)
+					{
+						Trace.TraceWarning($"Could not parse the HTTP header 'User-Agent': \"{userAgentHeader}\". Reason: {ex.Message}");
+					}
+
 					AuthenticatorPlatformType platformType = AuthenticatorPlatformType.Unknown;
 					var platformAuthenticator = options.AuthenticatorSelection.AuthenticatorAttachment == AuthenticatorAttachment.Platform ? true : false;
-					if (useragentInfo.Platform.HasValue && platformAuthenticator)
+					if (userAgentInfo.Platform.HasValue && platformAuthenticator)
 					{
-						switch (useragentInfo.Platform.Value.PlatformType)
+						switch (userAgentInfo.Platform.Value.PlatformType)
 						{
 							case MyCSharp.HttpUserAgentParser.HttpUserAgentPlatformType.Unknown:
 							case MyCSharp.HttpUserAgentParser.HttpUserAgentPlatformType.Generic:

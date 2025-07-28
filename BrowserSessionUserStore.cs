@@ -340,7 +340,16 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 			if (userAgent != null)
 			{
-				var userAgentInfo = HttpUserAgentParser.Parse(userAgent);
+				HttpUserAgentInformation userAgentInfo = new HttpUserAgentInformation();
+
+				try
+				{
+					userAgentInfo = HttpUserAgentParser.Parse(userAgent);
+				}
+				catch (Exception ex)
+				{
+					Trace.TraceWarning($"Could not parse the HTTP header 'User-Agent': \"{userAgent}\". Reason: {ex.Message}");
+				}
 
 				string? operatingSystem = userAgentInfo.Platform.HasValue ? userAgentInfo.Platform.Value.Name : null;
 				string browser = $"{userAgentInfo.Name} {userAgentInfo.Version}";
