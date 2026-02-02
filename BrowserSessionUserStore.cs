@@ -477,21 +477,21 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 		private string? TryFindImpersonatingUserName()
 		{
-			string? fingerprint = TryFindImpersonatingUserName(Thread.CurrentPrincipal?.Identity as ClaimsIdentity);
+			string? impseronatingUserName = TryFindImpersonatingUserName(Thread.CurrentPrincipal?.Identity as ClaimsIdentity);
 
-			if (fingerprint != null) return fingerprint;
+			if (impseronatingUserName != null) return impseronatingUserName;
 
 			var context = httpContextAccessor.HttpContext;
 
-			fingerprint = TryFindImpersonatingUserName(context?.User?.Identity as ClaimsIdentity);
+			impseronatingUserName = TryFindImpersonatingUserName(context?.User?.Identity as ClaimsIdentity);
 
-			if (fingerprint != null) return fingerprint;
+			if (impseronatingUserName != null) return impseronatingUserName;
 
 			if (context?.Items.TryGetValue("ValidatedIdentity", out object? identityObject) ?? false)
 			{
-				fingerprint = TryFindImpersonatingUserName(identityObject as ClaimsIdentity);
+				impseronatingUserName = TryFindImpersonatingUserName(identityObject as ClaimsIdentity);
 
-				if (fingerprint != null) return fingerprint;
+				if (impseronatingUserName != null) return impseronatingUserName;
 			}
 
 			return null;

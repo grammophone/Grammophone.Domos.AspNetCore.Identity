@@ -83,6 +83,13 @@ namespace Grammophone.Domos.AspNetCore.Identity
 				var fingerprintClaim = currentUser.Claims.Where(c => c.Type == IdentityClaimNames.Fingerprint).FirstOrDefault();
 
 				fingerprint = fingerprintClaim?.Value;
+
+				Claim? impersonatedByClaim = currentUser.Claims.FirstOrDefault(c => c.Type == IdentityClaimNames.ImpersonatedBy);
+
+				if (impersonatedByClaim != null)
+				{
+					identity.AddClaim(new Claim(IdentityClaimNames.ImpersonatedBy, impersonatedByClaim.Value));
+				}
 			}
 
 			var browserSession = await this.UserManager.TryGetOrCreateBrowserSessionAsync(user, fingerprint);
