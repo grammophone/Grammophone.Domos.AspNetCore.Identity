@@ -71,7 +71,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		{
 			string? fingerprint = TryFindFingerprintClaim();
 
-			if (!String.IsNullOrEmpty(fingerprint))
+			if (!String.IsNullOrEmpty(fingerprint) && !String.IsNullOrEmpty(TryFindImpersonatingUserName()))
 			{
 				var browserSession = await TryGetOrCreateBrowserSessionAsync(user, fingerprint);
 
@@ -94,6 +94,13 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="cancellationToken">The cancellation token.</param>
 		public override async Task SetSecurityStampAsync(U user, string stamp, CancellationToken cancellationToken)
 		{
+			if (!String.IsNullOrEmpty(TryFindImpersonatingUserName()))
+			{
+				await base.SetSecurityStampAsync(user, stamp, cancellationToken);
+
+				return;
+			}
+
 			using (var transaction = this.DomainContainer.BeginTransaction())
 			{
 				string? fingerprint = TryFindFingerprintClaim();
@@ -128,7 +135,9 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 			if (user.ID == 0L) return null;
 
-			BrowserSession? browserSession = null;
+			if (String.IsNullOrEmpty(TryFindImpersonatingUserName())) return null;
+
+			BrowserSession ? browserSession = null;
 			ClientIpAddress? clientIpAddress = null;
 
 			var context = httpContextAccessor.HttpContext;
@@ -457,6 +466,30 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			if (context?.Items.TryGetValue("ValidatedIdentity", out object? identityObject) ?? false)
 			{
 				fingerprint = TryFindFingerprintClaim(identityObject as ClaimsIdentity);
+
+				if (fingerprint != null) return fingerprint;
+			}
+
+			return null;
+		}
+
+		private string? TryFindImpersonatingUserName(ClaimsIdentity? identity) => identity?.FindFirst(IdentityClaimNames.ImpersonatedBy)?.Value;
+
+		private string? TryFindImpersonatingUserName()
+		{
+			string? fingerprint = TryFindImpersonatingUserName(Thread.CurrentPrincipal?.Identity as ClaimsIdentity);
+
+			if (fingerprint != null) return fingerprint;
+
+			var context = httpContextAccessor.HttpContext;
+
+			fingerprint = TryFindImpersonatingUserName(context?.User?.Identity as ClaimsIdentity);
+
+			if (fingerprint != null) return fingerprint;
+
+			if (context?.Items.TryGetValue("ValidatedIdentity", out object? identityObject) ?? false)
+			{
+				fingerprint = TryFindImpersonatingUserName(identityObject as ClaimsIdentity);
 
 				if (fingerprint != null) return fingerprint;
 			}

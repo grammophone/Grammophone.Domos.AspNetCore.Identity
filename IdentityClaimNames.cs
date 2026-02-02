@@ -15,5 +15,10 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// Claim name for browser session fingerprint.
 		/// </summary>
 		public const string Fingerprint = "fingerprint";
+
+		/// <summary>
+		/// Claim name for a session that has been impersonated by another user.
+		/// </summary>
+		public const string ImpersonatedBy = "impersonatedBy";
 	}
 }
