@@ -135,12 +135,14 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 			if (user.ID == 0L) return null;
 
-			if (String.IsNullOrEmpty(TryFindImpersonatingUserName())) return null;
+			if (!String.IsNullOrEmpty(TryFindImpersonatingUserName())) return null; // If there is an impersonation, do not create a browser session.
 
-			BrowserSession ? browserSession = null;
+			BrowserSession? browserSession = null;
 			ClientIpAddress? clientIpAddress = null;
 
 			var context = httpContextAccessor.HttpContext;
+
+			if (context?.User?.Identity?.Name != user.UserName) return null; // If the current user is not the given user, do not create a browser session.
 
 			// Get client info
 			string? ipAddress = context?.Connection?.RemoteIpAddress?.ToString();
