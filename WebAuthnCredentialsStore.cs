@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Grammophone.DataAccess.QueryExtensions;
 using Fido2NetLib;
 using Fido2NetLib.Objects;
 using Grammophone.Domos.DataAccess;

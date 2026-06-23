@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Grammophone.DataAccess;
+using Grammophone.DataAccess.QueryExtensions;
 using Grammophone.Domos.DataAccess;
 using Grammophone.Domos.Domain;
 using Microsoft.AspNetCore.Identity;
