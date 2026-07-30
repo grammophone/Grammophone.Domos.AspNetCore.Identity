@@ -142,7 +142,11 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 			var context = httpContextAccessor.HttpContext;
 
-			if (context?.User?.Identity?.Name != user.UserName) return null; // If the current user is not the given user, do not create a browser session.
+			// Only enforce the match when the context already carries an authenticated principal
+			// (e.g. mid-request after sign-in). During cookie validation, HttpContext.User is not
+			// yet populated with the principal being validated, so IsAuthenticated is false here
+			// and the check must be skipped rather than treated as a mismatch.
+			if (context?.User?.Identity?.IsAuthenticated == true && context.User.Identity.Name != user.UserName) return null;
 
 			// Get client info
 			string? ipAddress = context?.Connection?.RemoteIpAddress?.ToString();
