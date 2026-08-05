@@ -135,18 +135,19 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 						existingCredentials = (await this.WebAuthnCredentialsStore.GetDescriptorsByLogicUserNameAsync(identityUser.UserName)).ToList();
 					}
 
-					var exts = new AuthenticationExtensionsClientInputs
-					{
-						UserVerificationMethod = true, //request for the authenticator to verify the user, so we do not need to use 2fa.
-					};
+					// The uvm extension was dropped by the FIDO2 library in 4.x. Its output was never
+					// read here; user verification is requested through UserVerification below, which
+					// is the part that actually governs whether the authenticator verifies the user.
+					var exts = new AuthenticationExtensionsClientInputs();
 
 					// 3. Create options
 					var uv = string.IsNullOrEmpty(userVerification) ? UserVerificationRequirement.Discouraged : userVerification.ToEnum<UserVerificationRequirement>();
-					var options = this.fido2Library.GetAssertionOptions(
-							existingCredentials,
-							uv,
-							exts
-					);
+					var options = this.fido2Library.GetAssertionOptions(new GetAssertionOptionsParams
+					{
+						AllowedCredentials = existingCredentials,
+						UserVerification = uv,
+						Extensions = exts
+					});
 
 					// 4. Temporarily store options in an encrypted cookie.
 					var encryptedOptions = this.EncryptedCookieManager.CreateEncryptedToken(options.ToJson()); //SignInManager.CreateEncryptedToken(options.ToJson());
@@ -175,12 +176,12 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 				catch (Exception e)
 				{
-					return Json(new AssertionOptions { Status = "error", ErrorMessage = FormatException(e) });
+					return Json(ErrorResponse(FormatException(e)));
 				}
 			}
 			else
 			{
-				return Json(new AssertionOptions { Status = "error", ErrorMessage = "WebAuthn is not available." });
+				return Json(ErrorResponse("WebAuthn is not available."));
 			}
 		}
 
@@ -199,15 +200,17 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 			{
 				// 1. Get the assertion options we sent the client by decrypting the cookie.
 				var cookieOptions = Request.Cookies["fido2.assertionOptions"]!;
-				if (cookieOptions.IsNullOrEmpty())
+				if (string.IsNullOrEmpty(cookieOptions))
 				{
-					return Json(new VerifyAssertionResult { Status = "error", ErrorMessage = "fido2.assertOptions is empty." });
+					return Json(ErrorResponse("fido2.assertOptions is empty."));
 				}
 
 				var options = AssertionOptions.FromJson(this.EncryptedCookieManager.DecryptAndValidateEncryptedToken(Convert.FromBase64String(cookieOptions))); //SignInManager.DecryptAndValidateEncryptedToken(Convert.FromBase64String(cookieOptions))); ;
 
-				// 2. Get registered credential from database
-				var creds = await this.WebAuthnCredentialsStore.TryGetCredentialByIdAsync(clientResponse.Id);
+				// 2. Get registered credential from database.
+				// RawId, not Id: 4.x redefined Id as the base64url string the browser sent and left
+				// RawId holding the decoded bytes that Id used to carry, which is what is stored.
+				var creds = await this.WebAuthnCredentialsStore.TryGetCredentialByIdAsync(clientResponse.RawId);
 
 				if (creds == null)
 				{
@@ -223,11 +226,14 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 				}
 
 				// 4. Make the assertion
-				var res = await this.fido2Library.MakeAssertionAsync(
-						clientResponse, 
-						options, creds.PublicKey,
-						Array.Empty<byte[]>(),
-						storedCounter, IsUserHandleOwnerOfCredentialIdAsync);
+				var res = await this.fido2Library.MakeAssertionAsync(new MakeAssertionParams
+				{
+					AssertionResponse = clientResponse,
+					OriginalOptions = options,
+					StoredPublicKey = creds.PublicKey,
+					StoredSignatureCounter = storedCounter,
+					IsUserHandleOwnerOfCredentialIdCallback = IsUserHandleOwnerOfCredentialIdAsync
+				});
 
 				// 5. Store the updated counter
 				await this.WebAuthnCredentialsStore.UpdateCounterAsync(
@@ -250,11 +256,11 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 			{
 				if (e.Message.Contains("Security Timestamp has expired"))
 				{
-					return Json(new VerifyAssertionResult { Status = "error", ErrorMessage = "You login session expired. You did not manage to provide your passkey or your security key in the given time (30 sec). Please try again." });
+					return Json(ErrorResponse("You login session expired. You did not manage to provide your passkey or your security key in the given time (30 sec). Please try again."));
 				}
 				else
 				{
-					return Json(new VerifyAssertionResult { Status = "error", ErrorMessage = "We couldn't verify you or the key you used. If you are using a security key, make sure this is your key and try again." });
+					return Json(ErrorResponse("We couldn't verify you or the key you used. If you are using a security key, make sure this is your key and try again."));
 				}
 			}
 		}
@@ -280,7 +286,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 					if (identityUser == null)
 					{
-						return Json(new AssertionOptions { Status = "sessionExpired", ErrorMessage = "Security Session Expired due to inactivity." });
+						return Json(StatusResponse("sessionExpired", "Security Session Expired due to inactivity."));
 					}
 
 					var existingCredentials = new List<PublicKeyCredentialDescriptor>();
@@ -300,18 +306,18 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 						existingCredentials = (await this.WebAuthnCredentialsStore.GetDescriptorsByLogicUserNameAsync(identityUser.UserName)).ToList();
 					}
 
-					var exts = new AuthenticationExtensionsClientInputs
-					{
-						UserVerificationMethod = true,
-					};
+					// The uvm extension was dropped by the FIDO2 library in 4.x; see the note on the
+					// equivalent call in AssertionOptionsPost.
+					var exts = new AuthenticationExtensionsClientInputs();
 
 					// 3. Create options
 					var uv = string.IsNullOrEmpty(request.userVerification) ? UserVerificationRequirement.Discouraged : request.userVerification.ToEnum<UserVerificationRequirement>();
-					var options = this.fido2Library.GetAssertionOptions(
-							existingCredentials,
-							uv,
-							exts
-					);
+					var options = this.fido2Library.GetAssertionOptions(new GetAssertionOptionsParams
+					{
+						AllowedCredentials = existingCredentials,
+						UserVerification = uv,
+						Extensions = exts
+					});
 
 					// 4. Temporarily store options in an encrypted cookie.
 					var encryptedOptions = this.EncryptedCookieManager.CreateEncryptedToken(options.ToJson());
@@ -341,12 +347,12 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 				catch (Exception e)
 				{
-					return Json(new AssertionOptions { Status = "error", ErrorMessage = FormatException(e) });
+					return Json(ErrorResponse(FormatException(e)));
 				}
 			}
 			else
 			{
-				return Json(new AssertionOptions { Status = "error", ErrorMessage = "WebAuthn is not available." });
+				return Json(ErrorResponse("WebAuthn is not available."));
 			}
 		}
 
@@ -373,8 +379,9 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 				//var encryptedCookie = cookieOptions["fido2.assertionOptionsMFA"].Value;
 				var options = AssertionOptions.FromJson(this.EncryptedCookieManager.DecryptAndValidateEncryptedToken(Convert.FromBase64String(cookieOptions)));
 
-				// 2. Get registered credential from database
-				var creds = await this.WebAuthnCredentialsStore.TryGetCredentialByIdAsync(clientResponse.Id);
+				// 2. Get registered credential from database.
+				// RawId, not Id — see the note on the equivalent lookup in MakeAssertion.
+				var creds = await this.WebAuthnCredentialsStore.TryGetCredentialByIdAsync(clientResponse.RawId);
 
 				if (creds == null)
 				{
@@ -390,13 +397,14 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 				}
 
 				// 4. Make the assertion
-				var res = await this.fido2Library.MakeAssertionAsync(
-					clientResponse,
-					options,
-					creds.PublicKey,
-					Array.Empty<byte[]>(),
-					storedCounter,
-					IsUserHandleOwnerOfCredentialIdAsync);
+				var res = await this.fido2Library.MakeAssertionAsync(new MakeAssertionParams
+				{
+					AssertionResponse = clientResponse,
+					OriginalOptions = options,
+					StoredPublicKey = creds.PublicKey,
+					StoredSignatureCounter = storedCounter,
+					IsUserHandleOwnerOfCredentialIdCallback = IsUserHandleOwnerOfCredentialIdAsync
+				});
 
 				// 6. Store the updated counter
 				await this.WebAuthnCredentialsStore.UpdateCounterAsync(res.CredentialId, res.SignCount);
@@ -424,7 +432,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 			}
 			catch (Exception e)
 			{
-				return Json(new VerifyAssertionResult { Status = "error", ErrorMessage = FormatException(e) });
+				return Json(ErrorResponse(FormatException(e)));
 			}
 		}
 
@@ -491,6 +499,37 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 		{
 			return string.Format("{0}{1}", e.Message, e.InnerException != null ? " (" + e.InnerException.Message + ")" : "");
 		}
+
+		/// <summary>
+		/// Builds a non-success payload in the shape the browser scripts expect:
+		/// <c>{ status, errorMessage }</c>.
+		/// </summary>
+		/// <param name="status">The status to report — <c>"error"</c>, or <c>"sessionExpired"</c>,
+		/// which the MFA scripts handle separately by redirecting rather than alerting.</param>
+		/// <param name="errorMessage">The message to show the user.</param>
+		/// <remarks>
+		/// <para>
+		/// Until FIDO2 4.x these fields came from <c>Fido2ResponseBase</c>, which every response model
+		/// inherited, so a status could be reported by newing up any of them. 4.x deleted that base
+		/// class: the success path now returns the bare model with no status field at all, and only
+		/// non-success responses are tagged. The library's own demo does exactly this.
+		/// </para>
+		/// <para>
+		/// The property names are deliberately lower-case rather than PascalCase. This type is
+		/// anonymous, so it is outside the FIDO2 namespace that
+		/// <c>IgnoreDataMemberOverrideResolver</c> camel-cases in the Attendance host, and Newtonsoft
+		/// would otherwise emit <c>"Status"</c> — which the scripts do not read. Naming the members
+		/// this way serializes correctly under both Newtonsoft and System.Text.Json, so the two
+		/// hosting applications agree.
+		/// </para>
+		/// </remarks>
+		private static object StatusResponse(string status, string errorMessage) => new { status, errorMessage };
+
+		/// <summary>
+		/// Builds the failure payload the browser scripts expect. See <see cref="StatusResponse"/>.
+		/// </summary>
+		/// <param name="errorMessage">The message to show the user.</param>
+		private static object ErrorResponse(string errorMessage) => StatusResponse("error", errorMessage);
 
 		#endregion
 	}

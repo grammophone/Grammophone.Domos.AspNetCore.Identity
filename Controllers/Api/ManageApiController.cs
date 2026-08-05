@@ -147,20 +147,23 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 					if (!string.IsNullOrEmpty(authType))
 						authenticatorSelection.AuthenticatorAttachment = authType.ToEnum<AuthenticatorAttachment>();
 
+					// The devicePubKey and uvm extensions were dropped by the FIDO2 library in 4.x.
+					// Neither was ever consumed here: no device public key was stored (the assertion
+					// call passed an empty set), and the uvm output was not read.
 					var exts = new AuthenticationExtensionsClientInputs
 					{
 						Extensions = true,
-						UserVerificationMethod = true,
-						DevicePubKey = new AuthenticationExtensionsDevicePublicKeyInputs() { Attestation = attType },
 						CredProps = true
 					};
 
-					var options = fido2Library.RequestNewCredential(
-						fidoUser,
-						existingDescriptors,
-						authenticatorSelection,
-						attType.ToEnum<AttestationConveyancePreference>(),
-						exts);
+					var options = fido2Library.RequestNewCredential(new RequestNewCredentialParams
+					{
+						User = fidoUser,
+						ExcludeCredentials = existingDescriptors,
+						AuthenticatorSelection = authenticatorSelection,
+						AttestationPreference = attType.ToEnum<AttestationConveyancePreference>(),
+						Extensions = exts
+					});
 
 					// 4. Temporarily store options in an encrypted cookie
 					var encryptedOptions = this.EncryptedCookieManager.CreateEncryptedToken(options.ToJson());
@@ -177,10 +180,10 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 				}
 				catch (Exception e)
 				{
-					return Json(new VerifyAssertionResult { Status = "error", ErrorMessage = FormatException(e) });
+					return Json(ErrorResponse(FormatException(e)));
 				}
 			}
-			return Json(new VerifyAssertionResult { Status = "error", ErrorMessage = "WebAuthn is not available." });
+			return Json(ErrorResponse("WebAuthn is not available."));
 		}
 
 		/// <summary>
@@ -198,9 +201,9 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 				// 1. get the options we sent the client
 				var cookieOptions = Request.Cookies["fido2.attestationOptions"]!;
 
-				if (cookieOptions.IsNullOrEmpty())
+				if (string.IsNullOrEmpty(cookieOptions))
 				{
-					return Json(new MakeNewCredentialResult("error", "fido2.assertOptions is empty.", null));// CredentialMakeResult { Status = "error", ErrorMessage = "fido2.assertOptions is empty." });
+					return Json(ErrorResponse("fido2.assertOptions is empty."));
 				}
 			
 				var options = CredentialCreateOptions.FromJson(this.EncryptedCookieManager.DecryptAndValidateEncryptedToken(Convert.FromBase64String(cookieOptions)));
@@ -210,11 +213,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 				if (user == null)
 				{
-					return Json(new MakeNewCredentialResult(
-						status:"error",
-						errorMessage: $"Unable to load user with username: '{options.User.Name}'.",
-						result: null
-					));
+					return Json(ErrorResponse($"Unable to load user with username: '{options.User.Name}'."));
 				}
 
 				// 2. Create callback so that lib can verify credential id is unique to this user
@@ -226,9 +225,17 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 				//	return true;
 				//};
 
-				// 2. Verify and make the credentials
-				var success = await fido2Library.MakeNewCredentialAsync(attestationResponse, options, IsCredentialIdUniqueToUserAsync);
-				if (success.Result != null)
+				// 2. Verify and make the credentials.
+				// 4.x returns the registered credential directly and throws on failure, where the
+				// previous release wrapped it in a result object whose Result could be null.
+				var credential = await fido2Library.MakeNewCredentialAsync(new MakeNewCredentialParams
+				{
+					AttestationResponse = attestationResponse,
+					OriginalOptions = options,
+					IsCredentialIdUniqueToUserCallback = IsCredentialIdUniqueToUserAsync
+				});
+
+				if (credential != null)
 				{
 					//2.1 find the user agent.
 					string userAgentHeader = this.Request?.Headers?.UserAgent.ToString() ?? String.Empty;
@@ -280,8 +287,8 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 					// 3. Store the credentials in db
 					await WebAuthnCredentialsStore.AddCredentialToUserAsync(
-						user.ID, options.User, 
-						success.Result, 
+						user.ID, options.User,
+						credential,
 						user.ID ,
 						platformType);
 				}
@@ -289,17 +296,13 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 				//can the action when registration succeeds, (e.g. log).
 				await OnFidoCredentialsRegisteredSucceededdAsync(user);
 
-				return Json(success);
+				return Json(credential);
 			}
 			catch (Exception e)
 			{
-				
-				
-				return Json(new MakeNewCredentialResult(
-					status: "error",
-					errorMessage: FormatException(e),
-					result: null
-				));
+
+
+				return Json(ErrorResponse(FormatException(e)));
 			}
 		}
 
@@ -363,6 +366,27 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 			return string.Format("{0}{1}", e.Message, e.InnerException != null ? " (" + e.InnerException.Message + ")" : "");
 		}
 
+		/// <summary>
+		/// Builds the failure payload the browser scripts expect: <c>{ status, errorMessage }</c>.
+		/// </summary>
+		/// <param name="errorMessage">The message to show the user.</param>
+		/// <remarks>
+		/// <para>
+		/// Until FIDO2 4.x these fields came from <c>Fido2ResponseBase</c>, which every response model
+		/// inherited, so an error could be reported by newing up any of them. 4.x deleted that base
+		/// class: the success path now returns the bare model with no status field at all, and only
+		/// failures are tagged. The library's own demo does exactly this.
+		/// </para>
+		/// <para>
+		/// The property names are deliberately lower-case rather than PascalCase. This type is
+		/// anonymous, so it is outside the FIDO2 namespace that
+		/// <c>IgnoreDataMemberOverrideResolver</c> camel-cases in the Attendance host, and Newtonsoft
+		/// would otherwise emit <c>"Status"</c> — which the scripts do not read. Naming the members
+		/// this way serializes correctly under both Newtonsoft and System.Text.Json, so the two
+		/// hosting applications agree.
+		/// </para>
+		/// </remarks>
+		private static object ErrorResponse(string errorMessage) => new { status = "error", errorMessage };
 
 		#endregion
 	}
