@@ -226,27 +226,37 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		{
 			if (attestationVerificationSuccess == null) throw new ArgumentNullException(nameof(attestationVerificationSuccess));
 
-			string friendlyName = "";
+			string friendlyName;
 
-			switch (platformType)
+			// Prefer what the credential itself reports. The AAGUID identifies the authenticator model,
+			// so it names the device precisely - "YubiKey 5 Series" rather than "Fido2 Security key" -
+			// and it also corrects the platform type, which is otherwise guessed from the browser's
+			// User-Agent and is wrong for a cross-device registration: an iCloud passkey created from
+			// a Windows PC would be recorded as Windows Hello.
+			//
+			// The catalogue is deliberately partial, so the User-Agent-derived value stays as the
+			// fallback for an unrecognised or all-zero AAGUID. A model that implies no single platform,
+			// such as a password manager, keeps the inferred type and contributes only its name.
+			// Either way this is just the default: the user can rename a credential afterwards.
+			if (AuthenticatorCatalogue.TryGetDescription(attestationVerificationSuccess.AaGuid, out var authenticator))
 			{
-				case AuthenticatorPlatformType.Unknown:
-					friendlyName = "Passkey";
-					break;
-				case AuthenticatorPlatformType.WindowsHello:
-					friendlyName = "Windows Hello";
-					break;
-				case AuthenticatorPlatformType.ICloudKeychain:
-					friendlyName = "ICloud Keychain";
-					break;
-				case AuthenticatorPlatformType.Android:
-					friendlyName = "Android";
-					break;
-				case AuthenticatorPlatformType.SecurityKey:
-					friendlyName = "Fido2 Security key";
-					break;
-				default:
-					break;
+				friendlyName = authenticator.Name;
+
+				if (authenticator.PlatformType != AuthenticatorPlatformType.Unknown)
+				{
+					platformType = authenticator.PlatformType;
+				}
+			}
+			else
+			{
+				friendlyName = platformType switch
+				{
+					AuthenticatorPlatformType.WindowsHello => "Windows Hello",
+					AuthenticatorPlatformType.ICloudKeychain => "ICloud Keychain",
+					AuthenticatorPlatformType.Android => "Android",
+					AuthenticatorPlatformType.SecurityKey => "Fido2 Security key",
+					_ => "Passkey",
+				};
 			}
 
 			var credential = new WebAuthnCredential
