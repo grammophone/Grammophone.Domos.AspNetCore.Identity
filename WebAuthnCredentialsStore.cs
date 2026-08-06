@@ -253,11 +253,17 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			{
 				CredentialFriendlyName = friendlyName,
 				UserName = user.Name,
-				// Keep the transports the authenticator reported. These are round-tripped into
-				// `allowCredentials` at sign-in by GetDescriptors, which lets the browser tailor its
-				// prompt - offering "insert your security key" for a USB authenticator rather than
-				// every option at once. Storing only the id, as this did, discarded them: the client
-				// sends transports (FIDO2 4.x requires the field) and they were then thrown away.
+				// Keep the transports the authenticator reported. Storing only the id, as this did,
+				// discarded them: the client sends transports (FIDO2 4.x requires the field) and they
+				// were then thrown away.
+				//
+				// GetDescriptors round-trips these into the credential lists, where a browser can use
+				// them to tailor its prompt - offering "insert your security key" for a USB
+				// authenticator rather than every option at once. Note that this only has an effect
+				// where a list is actually sent: registration's excludeCredentials, and an assertion
+				// for a KNOWN user such as the two-factor flow. A usernameless sign-in sends an empty
+				// allowCredentials, and there the browser enumerates discoverable credentials on the
+				// device itself, so the hint is irrelevant.
 				// Serializing the extra field is safe in both directions - PublicKeyCredentialDescriptor
 				// marks its three-argument constructor [JsonConstructor], so the values come back on
 				// read, and rows written before this change simply deserialize with null transports.
