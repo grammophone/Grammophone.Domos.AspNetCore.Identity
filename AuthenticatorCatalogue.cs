@@ -10,8 +10,14 @@ namespace Grammophone.Domos.AspNetCore.Identity
 	/// <remarks>
 	/// <para>
 	/// The AAGUID is standard: WebAuthn defines it, the authenticator reports it in the attested
-	/// credential data, and every unit of a model reports the same value. It is stored on every
-	/// credential, so this lookup also names credentials registered before it existed.
+	/// credential data, and every unit of a model reports the same value.
+	/// </para>
+	/// <para>
+	/// Note this affects <em>new</em> registrations only. The name is resolved once and persisted to
+	/// <c>CredentialFriendlyName</c>, so credentials registered before this catalogue existed keep
+	/// whatever label they were given, even though their AAGUID has always been stored and would
+	/// resolve here. Relabelling them takes a deliberate backfill, or a change to resolve the name on
+	/// read and treat the stored value as an override.
 	/// </para>
 	/// <para>
 	/// The AAGUID-to-name <em>mapping</em> is not standardised, and neither published source covers a
