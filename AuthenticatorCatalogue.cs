@@ -113,7 +113,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// The key, suitable for a presentation-layer lookup such as an icon, or null when the
 		/// authenticator is not catalogued.
 		/// </returns>
-		public static string TryGetKey(Guid aaGuid)
+		public static string? TryGetKey(Guid aaGuid)
 			=> TryGetDescription(aaGuid, out var description) ? description.Key : null;
 
 		#endregion

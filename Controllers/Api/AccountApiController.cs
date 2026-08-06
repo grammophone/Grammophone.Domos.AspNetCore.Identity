@@ -50,6 +50,44 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 		private readonly string cookieDomain = System.Configuration.ConfigurationManager.AppSettings["domain"]?.ToLower() ?? ".lifeaccount.ca";
 
+		/// <summary>
+		/// The domain to scope a handshake cookie to, or null to leave it host-only.
+		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// The configured domain is used whenever the request is actually inside it, which is every
+		/// deployment where one host serves the page and another the passkey API - the case the setting
+		/// exists for. It cannot be used otherwise: a server may only set a cookie for a domain it
+		/// belongs to, so returning ".lifeaccount.ca" while answering on another domain makes the browser
+		/// silently discard the cookie, and the next request in the ceremony fails with
+		/// "fido2.assertOptions is empty" - after the authenticator has already signed.
+		/// </para>
+		/// <para>
+		/// That is not hypothetical: Related Origin Requests let one passkey span lifeaccount.ca and
+		/// workaccount.ca, so a single process now answers on both. ROR makes the credential portable;
+		/// it does nothing for this application own cookies.
+		/// </para>
+		/// <para>
+		/// A host-only cookie is returned rather than one scoped to the request host, which would also
+		/// cover that host subdomains. Note <c>Request.Host.Host</c>, not <c>.Value</c>: the latter
+		/// carries the port, and a Domain attribute containing a port is invalid, so the browser drops
+		/// the cookie entirely.
+		/// </para>
+		/// </remarks>
+		private string? GetCookieDomain()
+		{
+			if (String.IsNullOrEmpty(cookieDomain)) return null;
+
+			string host = this.Request.Host.Host;
+			string bareDomain = cookieDomain.TrimStart('.');
+
+			bool isInsideConfiguredDomain =
+				String.Equals(host, bareDomain, StringComparison.OrdinalIgnoreCase)
+				|| host.EndsWith("." + bareDomain, StringComparison.OrdinalIgnoreCase);
+
+			return isInsideConfiguredDomain ? cookieDomain : null;
+		}
+
 		#endregion
 
 		#region Private fields
@@ -155,7 +193,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 					//var cookie = new ("fido2.assertionOptions", Convert.ToBase64String(encryptedOptions));
 					var fido2CookieOptions = new CookieOptions();
 					fido2CookieOptions.Expires = DateTimeOffset.Now.AddMinutes(4);
-					fido2CookieOptions.Domain = cookieDomain;
+					fido2CookieOptions.Domain = GetCookieDomain();
 					fido2CookieOptions.Path = "/";
 					fido2CookieOptions.IsEssential = true;
 					Response.Cookies.Append("fido2.assertionOptions", Convert.ToBase64String(encryptedOptions), fido2CookieOptions);
@@ -165,7 +203,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 					returnUrlCookieOptions.Expires = DateTimeOffset.Now.AddMinutes(4);
 
 					//var returnUrlCookie = new Microsoft.Net.Http.Headers.CookieHeaderValue("returnUrl", request.returnUrl);
-					returnUrlCookieOptions.Domain = cookieDomain;
+					returnUrlCookieOptions.Domain = GetCookieDomain();
 					returnUrlCookieOptions.Path = "/";
 					Response.Cookies.Append("returnUrl", request.returnUrl, returnUrlCookieOptions);
 
@@ -327,7 +365,7 @@ namespace Grammophone.Domos.AspNetCore.Identity.Controllers.Api
 
 					//var cookie = new CookieHeaderValue("fido2.assertionOptionsMFA", Convert.ToBase64String(encryptedOptions));
 					cookieOptions.Expires = DateTimeOffset.Now.AddMinutes(1); //should take it from configuration
-					cookieOptions.Domain = cookieDomain;
+					cookieOptions.Domain = GetCookieDomain();
 					cookieOptions.Path = "/";
 					Response.Cookies.Append("fido2.assertionOptionsMFA", Convert.ToBase64String(encryptedOptions), cookieOptions);
 					//var response = this.Request.CreateResponse<AssertionOptions>(options);
