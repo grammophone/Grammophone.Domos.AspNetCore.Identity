@@ -253,7 +253,19 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			{
 				CredentialFriendlyName = friendlyName,
 				UserName = user.Name,
-				DescriptorJson = JsonSerializer.Serialize(new PublicKeyCredentialDescriptor(attestationVerificationSuccess.Id)), //JsonConvert.SerializeObject(new PublicKeyCredentialDescriptor(attestationVerificationSuccess.CredentialId)),
+				// Keep the transports the authenticator reported. These are round-tripped into
+				// `allowCredentials` at sign-in by GetDescriptors, which lets the browser tailor its
+				// prompt - offering "insert your security key" for a USB authenticator rather than
+				// every option at once. Storing only the id, as this did, discarded them: the client
+				// sends transports (FIDO2 4.x requires the field) and they were then thrown away.
+				// Serializing the extra field is safe in both directions - PublicKeyCredentialDescriptor
+				// marks its three-argument constructor [JsonConstructor], so the values come back on
+				// read, and rows written before this change simply deserialize with null transports.
+				DescriptorJson = JsonSerializer.Serialize(
+					new PublicKeyCredentialDescriptor(
+						attestationVerificationSuccess.Type,
+						attestationVerificationSuccess.Id,
+						attestationVerificationSuccess.Transports)),
 				PublicKey = attestationVerificationSuccess.PublicKey,
 				UserHandle = user.Id,
 				SignatureCounter = attestationVerificationSuccess.SignCount,
