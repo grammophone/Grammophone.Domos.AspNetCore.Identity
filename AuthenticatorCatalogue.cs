@@ -50,30 +50,30 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		private static readonly Dictionary<Guid, AuthenticatorDescription> descriptionsByAaGuid = new()
 		{
 			// --- Platform authenticators and software passkey providers ---
-			[new Guid("08987058-cadc-4b81-b6e1-30de50dcbe96")] = new("Windows Hello", AuthenticatorPlatformType.WindowsHello),
-			[new Guid("9ddd1817-af5a-4672-a2b9-3e3dd95000a9")] = new("Windows Hello", AuthenticatorPlatformType.WindowsHello),
-			[new Guid("6028b017-b1d4-4c02-b4b3-afcdafc96bb2")] = new("Windows Hello", AuthenticatorPlatformType.WindowsHello),
-			[new Guid("fbfc3007-154e-4ecc-8c0b-6e020557d7bd")] = new("Apple Passwords", AuthenticatorPlatformType.ICloudKeychain),
-			[new Guid("dd4ec289-e01d-41c9-bb89-70fa845d4bf2")] = new("iCloud Keychain (Managed)", AuthenticatorPlatformType.ICloudKeychain),
-			[new Guid("adce0002-35bc-c60a-648b-0b25f1f05503")] = new("Chrome on Mac", AuthenticatorPlatformType.ICloudKeychain),
-			[new Guid("771b48fd-d3d4-4f74-9232-fc157ab0507a")] = new("Edge on Mac", AuthenticatorPlatformType.ICloudKeychain),
-			[new Guid("ea9b8d66-4d01-1d21-3ce4-b6b48cb575d4")] = new("Google Password Manager", AuthenticatorPlatformType.Android),
-			[new Guid("53414d53-554e-4700-0000-000000000000")] = new("Samsung Pass", AuthenticatorPlatformType.Android),
-			[new Guid("b5397666-4885-aa6b-cebf-e52262a439a2")] = new("Chromium Browser", AuthenticatorPlatformType.Unknown),
+			[new Guid("08987058-cadc-4b81-b6e1-30de50dcbe96")] = new("Windows Hello", AuthenticatorPlatformType.WindowsHello, "ri-windows-line"),
+			[new Guid("9ddd1817-af5a-4672-a2b9-3e3dd95000a9")] = new("Windows Hello", AuthenticatorPlatformType.WindowsHello, "ri-windows-line"),
+			[new Guid("6028b017-b1d4-4c02-b4b3-afcdafc96bb2")] = new("Windows Hello", AuthenticatorPlatformType.WindowsHello, "ri-windows-line"),
+			[new Guid("fbfc3007-154e-4ecc-8c0b-6e020557d7bd")] = new("Apple Passwords", AuthenticatorPlatformType.ICloudKeychain, "ri-apple-line"),
+			[new Guid("dd4ec289-e01d-41c9-bb89-70fa845d4bf2")] = new("iCloud Keychain (Managed)", AuthenticatorPlatformType.ICloudKeychain, "ri-apple-line"),
+			[new Guid("adce0002-35bc-c60a-648b-0b25f1f05503")] = new("Chrome on Mac", AuthenticatorPlatformType.ICloudKeychain, "ri-chrome-line"),
+			[new Guid("771b48fd-d3d4-4f74-9232-fc157ab0507a")] = new("Edge on Mac", AuthenticatorPlatformType.ICloudKeychain, "ri-edge-line"),
+			[new Guid("ea9b8d66-4d01-1d21-3ce4-b6b48cb575d4")] = new("Google Password Manager", AuthenticatorPlatformType.Android, "ri-google-line"),
+			[new Guid("53414d53-554e-4700-0000-000000000000")] = new("Samsung Pass", AuthenticatorPlatformType.Android, "ri-smartphone-line"),
+			[new Guid("b5397666-4885-aa6b-cebf-e52262a439a2")] = new("Chromium Browser", AuthenticatorPlatformType.Unknown, "ri-chrome-line"),
 
 			// --- Password managers acting as passkey providers ---
-			[new Guid("bada5566-a7aa-401f-bd96-45619a55120d")] = new("1Password", AuthenticatorPlatformType.Unknown),
-			[new Guid("d548826e-79b4-db40-a3d8-11116f7e8349")] = new("Bitwarden", AuthenticatorPlatformType.Unknown),
-			[new Guid("531126d6-e717-415c-9320-3d9aa6981239")] = new("Dashlane", AuthenticatorPlatformType.Unknown),
-			[new Guid("0ea242b4-43c4-4a1b-8b17-dd6d0b6baec6")] = new("Keeper", AuthenticatorPlatformType.Unknown),
-			[new Guid("b84e4048-15dc-4dd0-8640-f4f60813c8af")] = new("NordPass", AuthenticatorPlatformType.Unknown),
-			[new Guid("f3809540-7f14-49c1-a8b3-8f813b225541")] = new("Enpass", AuthenticatorPlatformType.Unknown),
-			[new Guid("891494da-2c90-4d31-a9cd-4eab0aed1309")] = new("Sésame", AuthenticatorPlatformType.Unknown),
-			[new Guid("39a5647e-1853-446c-a1f6-a79bae9f5bc7")] = new("IDmelon", AuthenticatorPlatformType.Unknown),
-			[new Guid("a11a5faa-9f32-4b8c-8c5d-2f7d13e8c942")] = new("AliasVault", AuthenticatorPlatformType.Unknown),
+			[new Guid("bada5566-a7aa-401f-bd96-45619a55120d")] = new("1Password", AuthenticatorPlatformType.Unknown, "ri-safe-2-line"),
+			[new Guid("d548826e-79b4-db40-a3d8-11116f7e8349")] = new("Bitwarden", AuthenticatorPlatformType.Unknown, "ri-safe-2-line"),
+			[new Guid("531126d6-e717-415c-9320-3d9aa6981239")] = new("Dashlane", AuthenticatorPlatformType.Unknown, "ri-safe-2-line"),
+			[new Guid("0ea242b4-43c4-4a1b-8b17-dd6d0b6baec6")] = new("Keeper", AuthenticatorPlatformType.Unknown, "ri-safe-2-line"),
+			[new Guid("b84e4048-15dc-4dd0-8640-f4f60813c8af")] = new("NordPass", AuthenticatorPlatformType.Unknown, "ri-safe-2-line"),
+			[new Guid("f3809540-7f14-49c1-a8b3-8f813b225541")] = new("Enpass", AuthenticatorPlatformType.Unknown, "ri-safe-2-line"),
+			[new Guid("891494da-2c90-4d31-a9cd-4eab0aed1309")] = new("Sésame", AuthenticatorPlatformType.Unknown, "ri-safe-2-line"),
+			[new Guid("39a5647e-1853-446c-a1f6-a79bae9f5bc7")] = new("IDmelon", AuthenticatorPlatformType.Unknown, "ri-safe-2-line"),
+			[new Guid("a11a5faa-9f32-4b8c-8c5d-2f7d13e8c942")] = new("AliasVault", AuthenticatorPlatformType.Unknown, "ri-safe-2-line"),
 
 			// --- Hardware security keys: only the models actually issued. Add as they are adopted. ---
-			[new Guid("a4e9fc6d-4cbe-4758-b8ba-37598bb5bbaa")] = new("YubiKey 5 Series", AuthenticatorPlatformType.SecurityKey),
+			[new Guid("a4e9fc6d-4cbe-4758-b8ba-37598bb5bbaa")] = new("YubiKey 5 Series", AuthenticatorPlatformType.SecurityKey, "ri-usb-line"),
 		};
 
 		#endregion
@@ -101,6 +101,37 @@ namespace Grammophone.Domos.AspNetCore.Identity
 			return descriptionsByAaGuid.TryGetValue(aaGuid, out description);
 		}
 
+		/// <summary>
+		/// The icon to show for a credential, preferring what its AAGUID says over what was inferred.
+		/// </summary>
+		/// <param name="aaGuid">The AAGUID stored on the credential.</param>
+		/// <param name="platformType">The stored platform type, used when the AAGUID is unrecognised.</param>
+		/// <returns>A CSS class from the Remix icon set the theme bundles.</returns>
+		/// <remarks>
+		/// <para>
+		/// Unlike the credential's name, this is resolved on <em>read</em>, so it also corrects
+		/// credentials registered before the catalogue existed — their AAGUID has always been stored.
+		/// </para>
+		/// <para>
+		/// An unrecognised authenticator falls back to the platform type, and an unknown platform gets
+		/// a generic key rather than a question mark: an unfamiliar model is still a working passkey,
+		/// and a security screen should not imply something went wrong with it.
+		/// </para>
+		/// </remarks>
+		public static string GetIconClass(Guid aaGuid, AuthenticatorPlatformType platformType)
+		{
+			if (TryGetDescription(aaGuid, out var description)) return description.IconClass;
+
+			return platformType switch
+			{
+				AuthenticatorPlatformType.WindowsHello => "ri-windows-line",
+				AuthenticatorPlatformType.ICloudKeychain => "ri-apple-line",
+				AuthenticatorPlatformType.Android => "ri-android-line",
+				AuthenticatorPlatformType.SecurityKey => "ri-usb-line",
+				_ => "ri-key-2-line",
+			};
+		}
+
 		#endregion
 	}
 
@@ -115,5 +146,14 @@ namespace Grammophone.Domos.AspNetCore.Identity
 	/// <see cref="AuthenticatorPlatformType.Unknown"/> means the model is recognised but implies no
 	/// particular platform, as with a password manager available on several.
 	/// </param>
-	public readonly record struct AuthenticatorDescription(string Name, AuthenticatorPlatformType PlatformType);
+	/// <param name="IconClass">
+	/// The CSS class of the icon to show, from the Remix set the theme already bundles. Carried
+	/// separately from <paramref name="PlatformType"/> because the two do not always agree: a password
+	/// manager asserts no platform yet still deserves its own icon rather than inheriting the one
+	/// guessed for the device it happened to be used on.
+	/// </param>
+	public readonly record struct AuthenticatorDescription(
+		string Name,
+		AuthenticatorPlatformType PlatformType,
+		string IconClass);
 }
