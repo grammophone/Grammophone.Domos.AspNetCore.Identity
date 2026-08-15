@@ -94,27 +94,24 @@ namespace Grammophone.Domos.AspNetCore.Identity
 		/// <param name="cancellationToken">The cancellation token.</param>
 		public override async Task SetSecurityStampAsync(U user, string stamp, CancellationToken cancellationToken)
 		{
-			if (!String.IsNullOrEmpty(TryFindImpersonatingUserName()))
-			{
-				await base.SetSecurityStampAsync(user, stamp, cancellationToken);
-
-				return;
-			}
+			string? fingerprint = TryFindFingerprintClaim();
 
 			using (var transaction = this.DomainContainer.BeginTransaction())
 			{
-				string? fingerprint = TryFindFingerprintClaim();
+				// Keep the user record's stamp in sync with the session's. The cookie security-stamp
+				// validator resolves the stamp from the user record during the validation phase (the
+				// per-session lookup is skipped there, because the authenticated user is not yet
+				// established). If only the session copy is updated, the freshly re-issued cookie carries
+				// the new session stamp while validation compares against the stale user-record stamp, and
+				// the user is logged out at the next validation interval.
+				await base.SetSecurityStampAsync(user, stamp, cancellationToken);
 
 				var browserSession = await TryGetOrCreateBrowserSessionAsync(user, fingerprint);
 
 				if (browserSession != null)
 				{
 					browserSession.SecurityStamp = stamp;
-
-					await OnSettingSecurityStampAsync(user);
 				}
-
-				await base.SetSecurityStampAsync(user, stamp, cancellationToken);
 
 				await transaction.CommitAsync();
 			}
