@@ -77,6 +77,8 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 				if (browserSession != null)
 				{
+					if (browserSession.IsLoggedOff) return null;
+
 					await OnGettingSecurityStampAsync(user);
 
 					return browserSession.SecurityStamp;
@@ -108,7 +110,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 				var browserSession = await TryGetOrCreateBrowserSessionAsync(user, fingerprint);
 
-				if (browserSession != null)
+				if (browserSession != null && !browserSession.IsLoggedOff)
 				{
 					browserSession.SecurityStamp = stamp;
 				}
@@ -134,16 +136,21 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 			if (!String.IsNullOrEmpty(TryFindImpersonatingUserName())) return null; // If there is an impersonation, do not create a browser session.
 
-			BrowserSession? browserSession = null;
-			ClientIpAddress? clientIpAddress = null;
-
 			var context = httpContextAccessor.HttpContext;
 
-			// Only enforce the match when the context already carries an authenticated principal
-			// (e.g. mid-request after sign-in). During cookie validation, HttpContext.User is not
-			// yet populated with the principal being validated, so IsAuthenticated is false here
-			// and the check must be skipped rather than treated as a mismatch.
-			if (context?.User?.Identity?.IsAuthenticated == true && context.User.Identity.Name != user.UserName) return null;
+			var currentClaimsPrincipal = context?.User;
+
+			if (currentClaimsPrincipal != null)
+			{
+				// Only enforce the match when the context already carries an authenticated principal
+				// (e.g. mid-request after sign-in). During cookie validation, HttpContext.User is not
+				// yet populated with the principal being validated, so IsAuthenticated is false here
+				// and the check must be skipped rather than treated as a mismatch.
+				if (currentClaimsPrincipal.Identity?.IsAuthenticated == true && currentClaimsPrincipal.Identity?.Name != user.UserName) return null;
+			}
+
+			BrowserSession? browserSession = null;
+			ClientIpAddress? clientIpAddress = null;
 
 			// Get client info
 			string? ipAddress = context?.Connection?.RemoteIpAddress?.ToString();
@@ -213,7 +220,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 				//check if the session has been logged out.
 				if (browserSession.IsLoggedOff)
 				{
-					return null;
+					return browserSession;
 				}
 
 				//update last seen
