@@ -88,13 +88,18 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 				if (user != null)
 				{
-					string? securityStamp = (await this.UserManager.TryGetOrCreateBrowserSessionAsync(user, fingerPrint))?.SecurityStamp;
+					var browserSession = await this.UserManager.TryGetOrCreateBrowserSessionAsync(user, fingerPrint);
 
-					string? securityStampClaim = principal.FindFirstValue("AspNet.Identity.SecurityStamp");
-
-					if (securityStamp != null && securityStampClaim == securityStamp)
+					if (browserSession != null && !browserSession.IsLoggedOff)
 					{
-						return user;
+						string? securityStamp = browserSession.SecurityStamp;
+
+						string? securityStampClaim = principal.FindFirstValue("AspNet.Identity.SecurityStamp");
+
+						if (securityStamp != null && securityStampClaim == securityStamp)
+						{
+							return user;
+						}
 					}
 				}
 			}

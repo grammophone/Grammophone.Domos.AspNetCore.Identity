@@ -94,7 +94,7 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 			var browserSession = await this.UserManager.TryGetOrCreateBrowserSessionAsync(user, fingerprint);
 
-			if (browserSession != null)
+			if (browserSession != null && !browserSession.IsLoggedOff)
 			{
 				identity.AddClaim(new Claim(Options.ClaimsIdentity.SecurityStampClaimType, browserSession.SecurityStamp));
 				identity.AddClaim(new Claim(IdentityClaimNames.Fingerprint, browserSession.FingerPrint));
