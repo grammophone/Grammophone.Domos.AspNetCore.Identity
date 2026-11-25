@@ -53,23 +53,31 @@ namespace Grammophone.Domos.AspNetCore.Identity
 
 		#region Public methods
 
-		/// <inheritdoc/>
+		/// <summary>
+		/// Logs off the current browser session, when it can be identified, and signs out.
+		/// </summary>
+		/// <remarks>
+		/// Logging off the browser session is best effort: the sign-out itself always happens. When the security
+		/// stamp validator rejects a cookie, it calls this during cookie validation, when <see cref="HttpContext.User"/>
+		/// is not yet the principal being validated and may carry no user name; and the user may no longer exist, as
+		/// when the account was deleted, or the database restored, while signed in. Failing there would leave the
+		/// rejected cookie in place, and every request would fail until it was cleared.
+		/// </remarks>
 		public override async Task SignOutAsync()
 		{
-			var user = this.Context.User;
+			var identity = this.Context.User?.Identity as ClaimsIdentity;
 
-			if (user != null)
+			string? fingerprint = identity?.FindFirst(IdentityClaimNames.Fingerprint)?.Value;
+
+			string? userName = identity?.Name;
+
+			if (!String.IsNullOrWhiteSpace(fingerprint) && !String.IsNullOrWhiteSpace(userName))
 			{
-				var identity = user.Identity as ClaimsIdentity;
+				var user = await this.UserManager.FindByNameAsync(userName);
 
-				if (identity != null)
+				if (user != null)
 				{
-					string? fingerprint = identity.FindFirst(IdentityClaimNames.Fingerprint)?.Value;
-
-					if (!String.IsNullOrWhiteSpace(fingerprint))
-					{
-						await this.UserManager.LogOffBrowserSessionAsync(identity.Name!, fingerprint);
-					}
+					await this.UserManager.LogOffBrowserSessionAsync(userName, fingerprint);
 				}
 			}
 
